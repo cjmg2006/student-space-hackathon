@@ -1,0 +1,3742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Future Self Simulator — concept prototype</title>
+<style>
+  :root {
+    --bg: #FAF8F4;
+    --surface: #FFFFFF;
+    --ink: #1F1D1B;
+    --ink-2: #6B6963;
+    --ink-3: #9B9590;
+    --accent: #5B7B66;
+    --accent-soft: #E5EDE7;
+    --accent-deep: #3D5746;
+    --border: #E8E4DD;
+    --border-soft: #F0EDE6;
+    --warm: #D9826E;
+    --warm-soft: #F8E4DD;
+    --warm-deep: #B05A45;
+    --shadow-sm: 0 1px 2px rgba(31, 29, 27, 0.04);
+    --shadow-md: 0 8px 24px rgba(31, 29, 27, 0.08);
+    --shadow-lg: 0 24px 60px rgba(31, 29, 27, 0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    background: #E8E4DD;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  .phone-shell {
+    max-width: 390px;
+    margin: 24px auto;
+    height: calc(100vh - 48px);
+    max-height: 844px;
+    background: var(--bg);
+    border-radius: 36px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (max-width: 480px) {
+    body { background: var(--bg); }
+    .phone-shell {
+      margin: 0;
+      height: 100vh;
+      max-height: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+  }
+
+  /* Each screen is a flex column filling phone-shell */
+  .screen {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .screen.hidden { display: none !important; }
+
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 24px 8px;
+    font-size: 14px; font-weight: 600;
+    flex-shrink: 0;
+    z-index: 20;
+  }
+  .status-bar-icons { display: flex; gap: 6px; align-items: center; }
+  .status-bar-icons svg { width: 16px; height: 16px; }
+
+  .app-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 24px 12px;
+    flex-shrink: 0;
+  }
+  .app-header h1 {
+    font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
+  }
+  .icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .icon-btn.on-scene {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(8px);
+  }
+  .icon-btn:hover { background: var(--accent-soft); border-color: var(--accent-soft); }
+  .icon-btn svg { width: 18px; height: 18px; color: var(--ink); }
+
+  .content {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 24px 100px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ---------- Mode picker ---------- */
+  .intro {
+    padding: 16px 24px 8px;
+  }
+  .intro-title {
+    font-size: 32px; font-weight: 700;
+    line-height: 1.15; letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .intro-sub {
+    font-size: 15px; color: var(--ink-2);
+    line-height: 1.5;
+  }
+
+  .mode-card {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 22px;
+    padding: 20px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+  }
+  .mode-card:not(.locked):hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .mode-card.featured {
+    border: 1px solid var(--accent);
+    background: linear-gradient(135deg, var(--surface) 0%, var(--accent-soft) 100%);
+  }
+  .mode-card.locked { opacity: 0.6; cursor: not-allowed; }
+  .mode-card.locked .mode-cta { color: var(--ink-3); }
+
+  .mode-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+  }
+  .mode-card.locked .mode-icon { background: var(--ink-3); }
+  .mode-icon svg { width: 22px; height: 22px; }
+
+  .mode-title {
+    font-size: 18px; font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .mode-desc {
+    font-size: 14px; color: var(--ink-2);
+    line-height: 1.5; margin-bottom: 12px;
+  }
+  .mode-cta {
+    font-size: 13px; color: var(--accent-deep);
+    font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .mode-cta svg { width: 14px; height: 14px; }
+  .mode-tag {
+    position: absolute;
+    top: 16px; right: 16px;
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 4px 8px;
+    background: var(--ink-3);
+    color: var(--bg);
+    border-radius: 99px;
+    text-transform: uppercase;
+  }
+  .mode-card.featured .mode-tag {
+    background: var(--accent);
+  }
+
+  /* ---------- Setup ---------- */
+  .setup-screen {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex; flex-direction: column;
+    padding: 8px 24px 100px;
+    overflow-y: auto;
+  }
+  .setup-q {
+    font-size: 24px; font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 16px 0 12px;
+    line-height: 1.3;
+  }
+  .setup-helper {
+    font-size: 14px; color: var(--ink-2);
+    margin-bottom: 20px;
+  }
+  .age-picker {
+    display: flex; gap: 8px;
+    margin-bottom: 32px;
+  }
+  .age-chip {
+    flex: 1;
+    padding: 16px 0;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .age-chip.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .age-chip-num {
+    font-size: 28px; font-weight: 700;
+    color: var(--ink); letter-spacing: -0.02em;
+  }
+  .age-chip-label {
+    font-size: 12px; color: var(--ink-2);
+    margin-top: 4px;
+  }
+
+  .text-input {
+    width: 100%;
+    padding: 16px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    font-family: inherit;
+    font-size: 16px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s ease;
+    margin-bottom: 16px;
+  }
+  .text-input:focus { border-color: var(--accent); }
+  .text-input::placeholder { color: var(--ink-3); }
+
+  .suggestion-chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 32px;
+  }
+  .suggestion-chip {
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: 99px;
+    font-size: 13px;
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+  .suggestion-chip:hover {
+    background: var(--accent-soft);
+    border-color: transparent;
+    color: var(--accent-deep);
+  }
+
+  .privacy-note {
+    background: var(--accent-soft);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    color: var(--accent-deep);
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: auto;
+  }
+  .privacy-note svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+
+  /* CTA bar */
+  .cta-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 16px 24px 32px;
+    background: linear-gradient(to top, var(--bg) 80%, transparent);
+    pointer-events: none;
+    z-index: 30;
+  }
+  .cta-bar.transparent {
+    background: transparent;
+  }
+  .cta {
+    width: 100%; height: 56px;
+    border-radius: 99px;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    font-size: 16px; font-weight: 600;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 8px 24px rgba(31, 29, 27, 0.18);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform 0.15s ease;
+  }
+  .cta:hover { transform: translateY(-1px); }
+  .cta:disabled { background: var(--ink-3); cursor: not-allowed; box-shadow: none; }
+  .cta svg { width: 20px; height: 20px; }
+
+  /* ---------- Loading transition ---------- */
+  .loading-screen {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 48px;
+    text-align: center;
+    background: linear-gradient(180deg, #2D3447 0%, #5C5F6F 100%);
+    color: #FAF8F4;
+    position: relative;
+    overflow: hidden;
+  }
+  .loading-stars {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(2px 2px at 20% 30%, white, transparent),
+      radial-gradient(1px 1px at 60% 70%, white, transparent),
+      radial-gradient(1.5px 1.5px at 80% 20%, white, transparent),
+      radial-gradient(1px 1px at 30% 80%, white, transparent),
+      radial-gradient(2px 2px at 70% 50%, white, transparent),
+      radial-gradient(1px 1px at 40% 60%, white, transparent);
+    opacity: 0.6;
+    animation: twinkle 4s ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.7; }
+  }
+  .loading-text {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 20px;
+  }
+  .loading-title {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin-bottom: 32px;
+  }
+  .loading-bar {
+    width: 200px; height: 3px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .loading-bar-fill {
+    width: 0%; height: 100%;
+    background: rgba(255,255,255,0.8);
+    border-radius: 99px;
+    transition: width 0.5s ease;
+  }
+
+  /* ===========================================
+     SIMULATION SCREEN
+     =========================================== */
+  .sim-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Top HUD: time + day timeline */
+  .sim-hud {
+    position: absolute;
+    top: 56px;
+    left: 0; right: 0;
+    z-index: 15;
+    padding: 12px 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    pointer-events: none;
+  }
+  .hud-pill {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 99px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    pointer-events: auto;
+  }
+  .hud-pill svg { width: 14px; height: 14px; color: var(--ink); }
+  .hud-time { letter-spacing: -0.01em; }
+  .hud-date { color: var(--ink-2); font-weight: 500; }
+
+  .day-timeline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 99px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    pointer-events: auto;
+  }
+  .day-pip {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--ink-3);
+    opacity: 0.4;
+    transition: all 0.4s ease;
+  }
+  .day-pip.done { background: var(--accent); opacity: 0.8; }
+  .day-pip.current {
+    background: var(--accent);
+    opacity: 1;
+    width: 24px;
+    border-radius: 4px;
+  }
+
+  /* Scene container */
+  .scene-container {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    transition: filter 0.8s ease, background 1.4s ease;
+    /* Fill space above and below the SVG with matching wall + floor colors */
+    background: linear-gradient(
+      180deg,
+      #F0E8D8 0%,
+      #F0E8D8 56.5%,
+      #D8CCB8 56.5%,
+      #D8CCB8 57.5%,
+      #A37A52 57.5%,
+      #8C6240 100%
+    );
+  }
+  .scene-container.in-debrief {
+    filter: brightness(0.55);
+  }
+  /* Match scene background to time-of-day */
+  .scene-container.morning { background: linear-gradient(180deg, #F0E8D8 0%, #F0E8D8 56.5%, #D8CCB8 56.5%, #D8CCB8 57.5%, #A37A52 57.5%, #8C6240 100%); }
+  .scene-container.midday { background: linear-gradient(180deg, #F0E8D8 0%, #F0E8D8 56.5%, #D8CCB8 56.5%, #D8CCB8 57.5%, #A37A52 57.5%, #8C6240 100%); }
+  .scene-container.afternoon { background: linear-gradient(180deg, #E8D5BC 0%, #E8D5BC 56.5%, #C8B498 56.5%, #C8B498 57.5%, #9A6E48 57.5%, #855638 100%); }
+  .scene-container.evening { background: linear-gradient(180deg, #C8B0A0 0%, #C8B0A0 56.5%, #A89080 56.5%, #A89080 57.5%, #6E4E36 57.5%, #5A3E28 100%); }
+  .scene-container.debrief { background: linear-gradient(180deg, #6E5A56 0%, #6E5A56 56.5%, #5E4A46 56.5%, #5E4A46 57.5%, #4A3026 57.5%, #3A2018 100%); }
+
+  .scene-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Time-of-day overlay */
+  .tod-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: background 1.4s ease, opacity 1.4s ease;
+    mix-blend-mode: multiply;
+    opacity: 0;
+  }
+  .scene-container.morning .tod-overlay {
+    background: linear-gradient(180deg, rgba(195,210,235,0.18) 0%, rgba(255,238,210,0.10) 100%);
+    opacity: 1;
+  }
+  .scene-container.midday .tod-overlay {
+    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,240,0) 100%);
+    opacity: 0;
+  }
+  .scene-container.afternoon .tod-overlay {
+    background: linear-gradient(180deg, rgba(255,200,140,0.22) 0%, rgba(255,170,100,0.18) 100%);
+    opacity: 1;
+  }
+  .scene-container.evening .tod-overlay {
+    background: linear-gradient(180deg, rgba(80,60,100,0.32) 0%, rgba(180,90,90,0.28) 60%, rgba(255,160,100,0.18) 100%);
+    opacity: 1;
+  }
+  .scene-container.debrief .tod-overlay {
+    background: linear-gradient(180deg, rgba(40,30,60,0.45) 0%, rgba(60,40,70,0.5) 100%);
+    opacity: 1;
+  }
+
+  /* Lamp glow (visible evening + debrief) */
+  .lamp-glow {
+    transform-origin: center;
+    transition: opacity 1.2s ease;
+    opacity: 0;
+  }
+  .scene-container.evening .lamp-glow,
+  .scene-container.debrief .lamp-glow {
+    opacity: 1;
+    animation: glow-pulse 4s ease-in-out infinite;
+  }
+  @keyframes glow-pulse {
+    0%, 100% { opacity: 0.85; }
+    50% { opacity: 1; }
+  }
+
+  /* Character poses — hide all by default, show by class */
+  .char-pose {
+    opacity: 0;
+    transition: opacity 0.7s ease;
+  }
+  .char-pose.visible {
+    opacity: 1;
+  }
+  .char-pose.visible .breath {
+    animation: breath 3s ease-in-out infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+  @keyframes breath {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.012); }
+  }
+
+  /* Plant sway */
+  .plant-leaves {
+    transform-origin: bottom center;
+    transform-box: fill-box;
+    animation: sway 6s ease-in-out infinite;
+  }
+  @keyframes sway {
+    0%, 100% { transform: rotate(-1.5deg); }
+    50% { transform: rotate(1.5deg); }
+  }
+
+  /* Cloud drift */
+  .clouds {
+    animation: drift 30s linear infinite;
+  }
+  @keyframes drift {
+    from { transform: translateX(0); }
+    to { transform: translateX(-30px); }
+  }
+
+  /* Sky gradients per time-of-day applied via CSS variable swap */
+  .sky-rect {
+    transition: fill 1.4s ease;
+  }
+
+  /* Bottom dialog system */
+  .dialog-area {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 12;
+    padding: 0 16px 24px;
+    pointer-events: none;
+  }
+  .narration {
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(12px);
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+    border: 1px solid rgba(255,255,255,0.6);
+    pointer-events: auto;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.4s ease;
+  }
+  .narration.visible {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  .narration-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .narration-text {
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: auto;
+  }
+  .choice {
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(10px);
+    border-radius: 14px;
+    padding: 14px 18px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    border: 1px solid rgba(255,255,255,0.7);
+    cursor: pointer;
+    font-size: 15px;
+    color: var(--ink);
+    transition: all 0.2s ease;
+    transform: translateY(20px);
+    opacity: 0;
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .choice .choice-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .choice.visible {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  .choice:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    background: white;
+  }
+  .choice:active { transform: translateY(0); }
+
+  /* Future-you's reaction (after a choice) */
+  .reaction-bubble {
+    position: absolute;
+    z-index: 13;
+    background: linear-gradient(135deg, #F5EBD8 0%, #FFF7E8 100%);
+    border-radius: 18px;
+    padding: 14px 16px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+    max-width: 75%;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #3A2E22;
+    transform: scale(0.85) translateY(10px);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.34, 1.5, 0.64, 1);
+    border: 1px solid rgba(180, 90, 69, 0.15);
+  }
+  .reaction-bubble.visible {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  .reaction-bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 28px;
+    width: 0; height: 0;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 10px solid #F5EBD8;
+  }
+  .reaction-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--warm-deep);
+    margin-bottom: 4px;
+  }
+
+  /* ===== OBSERVER MODE: thought bubbles, activity icons, controls ===== */
+
+  .thought-bubble {
+    position: absolute;
+    z-index: 12;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 18px 18px 18px 6px;
+    padding: 10px 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    max-width: 240px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--ink);
+    font-style: italic;
+    border: 1px solid rgba(255,255,255,0.7);
+    transform: scale(0.7) translateY(8px);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.34, 1.5, 0.64, 1);
+    pointer-events: none;
+  }
+  .thought-bubble.visible {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  .thought-bubble.fading {
+    transform: scale(0.92) translateY(-4px);
+    opacity: 0;
+  }
+  .thought-bubble::before {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 16px;
+    width: 8px; height: 8px;
+    background: rgba(255,255,255,0.96);
+    border-radius: 50%;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+  }
+  .thought-bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: 12px;
+    width: 4px; height: 4px;
+    background: rgba(255,255,255,0.96);
+    border-radius: 50%;
+  }
+
+  .activity-icon {
+    position: absolute;
+    z-index: 11;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transform: scale(0);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.5, 0.64, 1);
+    pointer-events: none;
+    border: 2px solid white;
+  }
+  .activity-icon.visible {
+    transform: scale(1);
+    opacity: 1;
+    animation: icon-bob 2.4s ease-in-out infinite;
+  }
+  .activity-icon.fading {
+    transform: scale(0.6) translateY(-32px);
+    opacity: 0;
+    transition: all 0.6s ease;
+  }
+  @keyframes icon-bob {
+    0%, 100% { transform: scale(1) translateY(0); }
+    50% { transform: scale(1) translateY(-6px); }
+  }
+  .activity-icon.warm { background: var(--warm-soft); color: var(--warm-deep); }
+  .activity-icon.cool { background: var(--accent-soft); color: var(--accent-deep); }
+  .activity-icon.yellow { background: #FFF1CB; color: #8C7038; }
+
+  /* Speed / skip controls */
+  .sim-controls {
+    position: absolute;
+    top: 110px;
+    right: 14px;
+    z-index: 16;
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 99px;
+    padding: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .sim-controls.hidden-controls {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+  }
+  .ctrl-btn {
+    height: 30px;
+    min-width: 30px;
+    padding: 0 10px;
+    border-radius: 99px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    transition: background 0.15s ease;
+  }
+  .ctrl-btn:hover { background: var(--accent-soft); }
+  .ctrl-btn.active {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .ctrl-btn svg { width: 12px; height: 12px; }
+
+  /* Observer status pill */
+  .observer-status {
+    position: absolute;
+    top: 110px;
+    left: 14px;
+    z-index: 16;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 99px;
+    padding: 7px 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink);
+    transition: all 0.3s ease;
+  }
+  .observer-status .ind {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse-soft 2s ease-in-out infinite;
+  }
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .observer-status.your-turn { color: var(--warm-deep); background: rgba(248, 228, 221, 0.95); }
+  .observer-status.your-turn .ind { background: var(--warm-deep); animation: pulse-strong 1.2s infinite; }
+  @keyframes pulse-strong {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(176, 90, 69, 0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(176, 90, 69, 0); }
+  }
+  .observer-status.hidden-status {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+  }
+
+  /* Vocalist (NPC) — slides in from right */
+  .npc-vocalist {
+    opacity: 0;
+    transform: translateX(60px);
+    transition: opacity 0.6s ease, transform 1.4s cubic-bezier(0.34, 1.2, 0.64, 1);
+  }
+  .npc-vocalist.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* ===== SUBTITLE (cinema-style narration) ===== */
+  .subtitle {
+    position: absolute;
+    bottom: 24px;
+    left: 16px;
+    right: 16px;
+    z-index: 14;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+  }
+  .subtitle.cc-off {
+    opacity: 0;
+  }
+  .subtitle-card {
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 14px 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+    border: 1px solid rgba(255,255,255,0.6);
+    max-width: 340px;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--ink);
+    text-align: center;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .subtitle-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .subtitle-card .narrator-tag {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .subtitle-card .narrator-tag.action {
+    color: var(--warm-deep);
+  }
+
+  /* Time-skip overlay */
+  .timeskip {
+    position: absolute;
+    inset: 0;
+    z-index: 18;
+    background: rgba(15, 14, 22, 0.88);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+  .timeskip.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .timeskip-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    opacity: 0.6;
+  }
+  .timeskip-time {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .timeskip-where {
+    font-size: 14px;
+    opacity: 0.7;
+  }
+
+  /* ===========================================
+     MODE 1: TALK TO FUTURE YOU
+     =========================================== */
+
+  /* Appearance moment (orb pulse) */
+  .appearance-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 32px;
+    text-align: center;
+    background: linear-gradient(180deg, #2D3447 0%, #5C5F6F 100%);
+    color: #FAF8F4;
+    position: relative;
+    overflow: hidden;
+  }
+  .appearance-orb {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, var(--accent-soft), var(--accent) 80%);
+    box-shadow: 0 0 80px rgba(229, 237, 231, 0.4);
+    animation: appearance-pulse 3s ease-in-out infinite;
+    margin-bottom: 28px;
+  }
+  @keyframes appearance-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 60px rgba(229, 237, 231, 0.35); }
+    50% { transform: scale(1.06); box-shadow: 0 0 100px rgba(229, 237, 231, 0.55); }
+  }
+  .appearance-text {
+    font-size: 18px;
+    line-height: 1.5;
+    max-width: 280px;
+    opacity: 0.92;
+  }
+  .appearance-text strong { font-weight: 600; }
+  .appearance-sub {
+    font-size: 13px;
+    opacity: 0.65;
+    margin-top: 12px;
+  }
+
+  /* Chat screen */
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px 12px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .chat-header .orb-small {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, var(--accent-soft), var(--accent) 80%);
+    flex-shrink: 0;
+  }
+  .chat-header-text { flex: 1; }
+  .chat-header-text .name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .chat-header-text .sub {
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+
+  .chat-messages {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 16px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .msg {
+    max-width: 78%;
+    padding: 11px 15px;
+    font-size: 15px;
+    line-height: 1.45;
+    border-radius: 18px;
+    animation: msg-in 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+  @keyframes msg-in {
+    from { transform: translateY(8px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .msg.future {
+    background: linear-gradient(135deg, #F5EBD8 0%, var(--accent-soft) 100%);
+    color: var(--ink);
+    align-self: flex-start;
+    border-bottom-left-radius: 6px;
+  }
+  .msg.you {
+    background: var(--ink);
+    color: var(--bg);
+    align-self: flex-end;
+    border-bottom-right-radius: 6px;
+  }
+  .typing {
+    background: var(--accent-soft);
+    align-self: flex-start;
+    padding: 14px 18px;
+    border-radius: 18px;
+    border-bottom-left-radius: 6px;
+    display: flex; gap: 4px;
+  }
+  .typing span {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: type-bounce 1.4s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes type-bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+    40% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  .reply-bar {
+    border-top: 1px solid var(--border);
+    padding: 12px 16px 24px;
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+  .reply-suggestions {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 10px;
+  }
+  .reply-chip {
+    padding: 8px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    font-size: 13px;
+    color: var(--ink);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .reply-chip:hover { background: var(--accent-soft); border-color: var(--accent-soft); }
+
+  .reply-input-wrap {
+    display: flex; gap: 8px;
+    background: var(--surface);
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    padding: 6px 6px 6px 16px;
+    align-items: center;
+  }
+  .reply-input-wrap input {
+    flex: 1; border: none; outline: none;
+    font-family: inherit; font-size: 15px;
+    background: transparent;
+    color: var(--ink);
+  }
+  .reply-input-wrap button {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .reply-input-wrap button svg { width: 16px; height: 16px; }
+
+  /* ===========================================
+     MODE 3: BRANCHING PATH EXPLORER
+     =========================================== */
+
+  .branching-screen {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex; flex-direction: column;
+    padding: 8px 24px 100px;
+    overflow-y: auto;
+  }
+
+  .fork-pickers {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .fork-option {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    font-family: inherit;
+    color: var(--ink);
+  }
+  .fork-option:hover { border-color: var(--accent-soft); background: var(--accent-soft); }
+  .fork-option.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .fork-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .fork-icon svg { width: 18px; height: 18px; }
+  .fork-text {
+    flex: 1;
+  }
+  .fork-text .ftitle {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .fork-text .fsub {
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.4;
+  }
+
+  /* Paths comparison view */
+  .paths-screen {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex; flex-direction: column;
+    padding: 8px 16px 100px;
+    overflow-y: auto;
+    background: linear-gradient(180deg, #F5EFE3 0%, var(--bg) 50%);
+  }
+  .paths-eyebrow {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-top: 8px;
+    margin-bottom: 6px;
+  }
+  .paths-title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    margin-bottom: 20px;
+    padding: 0 16px;
+  }
+  .path-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 22px;
+    padding: 22px 22px 24px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  .path-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--path-color, var(--accent));
+  }
+  .path-card.path-a { --path-color: var(--accent); --path-soft: var(--accent-soft); --path-deep: var(--accent-deep); }
+  .path-card.path-b { --path-color: var(--warm-deep); --path-soft: var(--warm-soft); --path-deep: var(--warm-deep); }
+  .path-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--path-color);
+  }
+  .path-card.selected {
+    border-color: var(--path-color);
+    border-width: 2px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+  }
+  .path-label {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--path-soft);
+    color: var(--path-deep);
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .path-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .path-vignette {
+    font-family: "Iowan Old Style", "Palatino", "Hoefler Text", serif;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin-bottom: 16px;
+    font-style: italic;
+  }
+  .path-detail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .path-detail {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .path-detail .pd-label {
+    font-weight: 600;
+    color: var(--path-deep);
+    min-width: 70px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding-top: 2px;
+  }
+  .path-detail .pd-text { flex: 1; color: var(--ink-2); }
+
+  .paths-question {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 20px 16px 12px;
+    letter-spacing: -0.01em;
+  }
+
+  /* ---------- Postcard ---------- */
+  .postcard-screen {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: 8px 16px 100px;
+    overflow-y: auto;
+  }
+  .postcard-title {
+    font-size: 20px; font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 12px 0 6px;
+  }
+  .postcard-sub {
+    font-size: 14px; color: var(--ink-2);
+    margin-bottom: 24px;
+  }
+
+  .postcard {
+    width: 100%;
+    aspect-ratio: 5 / 7;
+    background:
+      linear-gradient(135deg, #FFF7E8 0%, #F5EBD8 100%);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08);
+    padding: 28px 26px;
+    position: relative;
+    overflow: hidden;
+    animation: postcard-in 0.8s ease;
+  }
+  @keyframes postcard-in {
+    from { transform: translateY(20px) rotate(-2deg); opacity: 0; }
+    to { transform: translateY(0) rotate(0); opacity: 1; }
+  }
+  .postcard::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.4) 0%, transparent 40%),
+      radial-gradient(circle at 20% 80%, rgba(176,90,69,0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .postcard-stamp {
+    position: absolute;
+    top: 18px; right: 18px;
+    width: 50px; height: 56px;
+    border: 1.5px dashed var(--warm-deep);
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--warm-deep);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-align: center;
+    line-height: 1.2;
+    transform: rotate(-3deg);
+    background: rgba(255,255,255,0.4);
+  }
+  .postcard-from {
+    font-size: 11px;
+    color: var(--warm-deep);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .postcard-to {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 18px;
+    letter-spacing: -0.01em;
+  }
+  .postcard-body {
+    font-family: "Iowan Old Style", "Palatino", "Hoefler Text", serif;
+    font-size: 15px;
+    line-height: 1.55;
+    color: #3A2E22;
+  }
+  .postcard-body p { margin-bottom: 10px; }
+  .postcard-sig {
+    margin-top: 16px;
+    font-style: italic;
+    color: var(--warm-deep);
+    font-size: 13px;
+  }
+
+  .seal-section {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 18px;
+    padding: 18px;
+    margin-top: 24px;
+  }
+  .seal-section h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .seal-section p {
+    font-size: 13px; color: var(--ink-2);
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+  .date-options {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .date-chip {
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 99px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s ease;
+  }
+  .date-chip.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+
+  /* ---------- If-then capture ---------- */
+  .ifthen-screen {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex; flex-direction: column;
+    padding: 16px 24px 100px;
+    overflow-y: auto;
+  }
+  .ifthen-q {
+    font-size: 24px; font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+  .ifthen-from-future {
+    background: var(--accent-soft);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: var(--accent-deep);
+    line-height: 1.5;
+  }
+  .ifthen-from-future strong { display: block; font-weight: 600; margin-bottom: 4px; }
+  .ifthen-fields {
+    display: flex; flex-direction: column;
+    gap: 14px; margin-bottom: 16px;
+  }
+  .ifthen-row {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+  }
+  .ifthen-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .ifthen-input {
+    width: 100%;
+    border: none; outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 16px;
+    color: var(--ink);
+    line-height: 1.4;
+  }
+  .ifthen-reminder {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border-radius: 14px;
+    border: 1px solid var(--border-soft);
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .ifthen-reminder svg { width: 18px; height: 18px; color: var(--accent); }
+  .switch {
+    width: 42px; height: 24px;
+    background: var(--border);
+    border-radius: 99px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+  }
+  .switch.on { background: var(--accent); }
+  .switch::after {
+    content: ""; position: absolute;
+    top: 2px; left: 2px;
+    width: 20px; height: 20px;
+    background: var(--bg);
+    border-radius: 50%;
+    transition: left 0.2s ease;
+  }
+  .switch.on::after { left: 20px; }
+
+  /* ---------- Done ---------- */
+  .done-screen {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 32px;
+    text-align: center;
+    gap: 18px;
+  }
+  .done-icon {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .done-icon svg { width: 36px; height: 36px; color: var(--accent); }
+  .done-title {
+    font-size: 26px; font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .done-sub {
+    color: var(--ink-2);
+    font-size: 15px;
+    line-height: 1.5;
+    max-width: 280px;
+  }
+  .done-card {
+    background: var(--surface);
+    border-radius: 18px;
+    padding: 18px;
+    margin-top: 8px;
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-sm);
+    width: 100%;
+    max-width: 320px;
+    text-align: left;
+  }
+  .done-card .when {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .done-card .what {
+    font-size: 14px; color: var(--ink);
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .hidden { display: none !important; }
+
+  /* Side-by-side layout: concept card next to phone on desktop */
+  .layout-wrap {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 56px;
+    padding: 32px 24px;
+    min-height: 100vh;
+  }
+  .layout-wrap .phone-shell { margin: 0; flex-shrink: 0; width: 390px; }
+
+  .concept-panel {
+    width: 320px;
+    flex-shrink: 0;
+    padding: 32px 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink);
+    position: sticky;
+    top: 32px;
+  }
+  .concept-panel .num-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .concept-panel h2 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 14px;
+    color: var(--ink);
+  }
+  .concept-panel .pitch {
+    color: var(--ink-2);
+    font-size: 16px;
+    line-height: 1.45;
+    font-style: italic;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .concept-panel h3 {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    margin-top: 20px;
+  }
+  .concept-panel h3:first-of-type { margin-top: 0; }
+  .concept-panel p { margin-bottom: 4px; color: var(--ink); }
+  .concept-panel .demo-flow {
+    background: rgba(91, 123, 102, 0.08);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-top: 28px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--accent-deep);
+  }
+  .concept-panel .demo-flow strong {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .concept-panel .demo-flow code {
+    background: rgba(91, 123, 102, 0.12);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    color: var(--accent-deep);
+  }
+  @media (max-width: 900px) {
+    .layout-wrap { display: block; padding: 0; }
+    .concept-panel { display: none; }
+    .layout-wrap .phone-shell { margin: 24px auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout-wrap">
+
+<aside class="concept-panel">
+  <div class="num-tag">CONCEPT 03</div>
+  <h2>Future Self Simulator</h2>
+  <p class="pitch">Step into a possible future. Live a Tuesday in it. Make choices. See how it goes.</p>
+
+  <h3>How it works</h3>
+  <p>Three ways to step in.</p>
+  <p><strong>Try a Day</strong> — watch a Tuesday in a possible future unfold. Pure observation with subtitles. At day's end, pick the moment that lit you up.</p>
+  <p><strong>Talk to Future You</strong> — a 5-turn chat with an older version of yourself. They tell you about their day, then offer you a postcard.</p>
+  <p><strong>Branching Path</strong> — name a fork (subject combo, JC vs poly, CCA leadership). See two 3-year futures side by side. Pick which feels more like you.</p>
+
+  <h3>The magic moment</h3>
+  <p>Future-you turns to face you in the lamplit studio at 8:30 PM and asks the real question.</p>
+
+  <h3>Anchored to</h3>
+  <p>H3 (hard to see what's possible) + H12 (action gap). The gap between "I can't see a future" and "one tiny thing to try" is the highest-leverage intervention in the problem space.</p>
+
+  <div class="demo-flow">
+    <strong>Try the demo</strong>
+    Three modes to try. <code>Try a Day</code>: watch the music producer Tuesday, pick the vocalist moment at debrief. <code>Talk to Future You</code>: have a chat, accept the postcard at the end. <code>Branching Path</code>: pick subject combo, read both, pick one.
+  </div>
+</aside>
+
+<div class="phone-shell">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span>9:41</span>
+    <div class="status-bar-icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h2v-8H2v8zm5 0h2V10H7v12zm5 0h2V2h-2v20zm5 0h2v-6h-2v6z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C7 3 2.7 6 1 10.5l1.9.7C4.4 7.5 8 5 12 5s7.6 2.5 9.1 6.2l1.9-.7C21.3 6 17 3 12 3zm0 4c-3.4 0-6.3 2-7.6 5l1.9.7c1-2.4 3.3-4 5.7-4s4.7 1.6 5.7 4l1.9-.7c-1.3-3-4.2-5-7.6-5zm0 4c-1.7 0-3.2 1-4 2.5l1.9.7c.4-.8 1.2-1.2 2.1-1.2s1.7.5 2.1 1.2l1.9-.7c-.8-1.5-2.3-2.5-4-2.5z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33A1.33 1.33 0 007 5.33v15.34A1.33 1.33 0 008.33 22h7.34A1.33 1.33 0 0017 20.67V5.33A1.33 1.33 0 0015.67 4zM11 20v-5.5H9L13 7v5.5h2L11 20z"/></svg>
+    </div>
+  </div>
+
+  <!-- MODE PICKER -->
+  <div id="screen-modes" class="screen">
+    <div class="intro">
+      <div class="intro-title">Future Self</div>
+      <div class="intro-sub">Step into a possible version of you. See what you'd see. Hear what they'd say. Leave with one small thing to try.</div>
+    </div>
+    <div class="content" style="padding-top: 12px;">
+      <div class="mode-card featured" onclick="goSetup('tryDay')">
+        <span class="mode-tag">Open</span>
+        <div class="mode-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="mode-title">Try a Day</div>
+        <div class="mode-desc">Watch a Tuesday in a possible future unfold. Subtitles narrate. You observe.</div>
+        <div class="mode-cta">
+          Begin
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M13 6l6 6-6 6"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="mode-card" onclick="goSetup('talkTo')">
+        <span class="mode-tag" style="background: var(--accent);">Open</span>
+        <div class="mode-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <div class="mode-title">Talk to Future You</div>
+        <div class="mode-desc">A short conversation with a version of yourself a few years from now.</div>
+        <div class="mode-cta">
+          Begin
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M13 6l6 6-6 6"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="mode-card" onclick="goSetup('branching')">
+        <span class="mode-tag" style="background: var(--accent);">Open</span>
+        <div class="mode-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 3v12"/>
+            <circle cx="18" cy="6" r="3"/>
+            <circle cx="6" cy="18" r="3"/>
+            <path d="M18 9a9 9 0 0 1-9 9"/>
+          </svg>
+        </div>
+        <div class="mode-title">Branching Path Explorer</div>
+        <div class="mode-desc">Name a fork you're facing. See two plausible 3-year futures side by side.</div>
+        <div class="mode-cta">
+          Begin
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M13 6l6 6-6 6"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div id="screen-setup" class="screen hidden">
+    <div class="app-header">
+      <button class="icon-btn" onclick="goModes()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+      </button>
+      <h1 style="font-size: 16px;">Try a Day</h1>
+      <div style="width: 36px;"></div>
+    </div>
+    <div class="setup-screen">
+      <div class="setup-q">How old is the future you?</div>
+      <div class="age-picker">
+        <div class="age-chip" data-age="18" onclick="pickAge(18)">
+          <div class="age-chip-num">18</div>
+          <div class="age-chip-label">Just out of school</div>
+        </div>
+        <div class="age-chip selected" data-age="21" onclick="pickAge(21)">
+          <div class="age-chip-num">21</div>
+          <div class="age-chip-label">Figuring it out</div>
+        </div>
+        <div class="age-chip" data-age="80" onclick="pickAge(80)">
+          <div class="age-chip-num">80</div>
+          <div class="age-chip-label">Looking back</div>
+        </div>
+      </div>
+
+      <div class="setup-q">What does future you do?</div>
+      <div class="setup-helper">If you're not sure, pick a curiosity. You don't have to commit.</div>
+      <input type="text" class="text-input" id="version-input" placeholder="A music producer..." />
+      <div class="suggestion-chips">
+        <button class="suggestion-chip" onclick="useSuggestion('music producer')">music producer</button>
+        <button class="suggestion-chip" onclick="useSuggestion('teacher')">teacher</button>
+        <button class="suggestion-chip" onclick="useSuggestion('researcher')">researcher</button>
+        <button class="suggestion-chip" onclick="useSuggestion('designer')">designer</button>
+      </div>
+
+      <div class="privacy-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <div>
+          <strong style="font-weight: 600;">This stays with you.</strong>
+          The day isn't saved. Only the postcard you choose to keep.
+        </div>
+      </div>
+    </div>
+    <div class="cta-bar">
+      <button class="cta" id="setup-cta" onclick="onSetupBegin()" disabled>
+        Begin
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== MODE 1: APPEARANCE (briefly between setup and chat) ===== -->
+  <div id="screen-appearance" class="screen hidden">
+    <div class="appearance-screen">
+      <div class="appearance-orb"></div>
+      <div class="appearance-text" id="appearance-text">
+        <strong>Future you</strong> is here.
+      </div>
+      <div class="appearance-sub" id="appearance-sub">The one who became <span id="appearance-version">a music producer</span>.</div>
+    </div>
+  </div>
+
+  <!-- ===== MODE 1: CHAT ===== -->
+  <div id="screen-chat" class="screen hidden">
+    <div class="app-header">
+      <button class="icon-btn" onclick="confirmExit()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <div></div>
+      <div style="width: 36px;"></div>
+    </div>
+    <div class="chat-header">
+      <div class="orb-small"></div>
+      <div class="chat-header-text">
+        <div class="name">Future you · <span id="chat-age">21</span></div>
+        <div class="sub">The one who became <span id="chat-version">a music producer</span></div>
+      </div>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="reply-bar" id="reply-bar">
+      <div class="reply-suggestions" id="reply-suggestions"></div>
+      <div class="reply-input-wrap">
+        <input type="text" id="chat-input" placeholder="Or type something..." />
+        <button onclick="sendUserMessage()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 2L11 13"/>
+            <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODE 3: BRANCHING SETUP (pick a fork) ===== -->
+  <div id="screen-setup-branching" class="screen hidden">
+    <div class="app-header">
+      <button class="icon-btn" onclick="goModes()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+      </button>
+      <h1 style="font-size: 16px;">Branching Path</h1>
+      <div style="width: 36px;"></div>
+    </div>
+    <div class="branching-screen">
+      <div class="setup-q">What's a fork you're facing?</div>
+      <div class="setup-helper">Pick one. We'll show you two plausible futures from each option.</div>
+
+      <div class="fork-pickers" id="fork-pickers">
+        <button class="fork-option selected" data-fork="subject" onclick="pickFork('subject')">
+          <div class="fork-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+          </div>
+          <div class="fork-text">
+            <div class="ftitle">Subject combo</div>
+            <div class="fsub">Triple Science vs Humanities. End of Sec 2.</div>
+          </div>
+        </button>
+
+        <button class="fork-option" data-fork="jc" onclick="pickFork('jc')">
+          <div class="fork-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <div class="fork-text">
+            <div class="ftitle">JC vs Polytechnic</div>
+            <div class="fsub">After Sec 4. Different journeys, same destination?</div>
+          </div>
+        </button>
+
+        <button class="fork-option" data-fork="leadership" onclick="pickFork('leadership')">
+          <div class="fork-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div class="fork-text">
+            <div class="ftitle">CCA leadership</div>
+            <div class="fsub">Run for the position, or stay in the background.</div>
+          </div>
+        </button>
+      </div>
+
+      <div class="privacy-note" style="margin-top: 24px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <div>
+          <strong style="font-weight: 600;">No right answer.</strong>
+          The point is to surface a gut response, not predict your future.
+        </div>
+      </div>
+    </div>
+    <div class="cta-bar">
+      <button class="cta" onclick="goPaths()">
+        See both futures
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== MODE 3: PATHS COMPARISON ===== -->
+  <div id="screen-paths" class="screen hidden">
+    <div class="app-header">
+      <button class="icon-btn" onclick="goSetupBranching()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+      </button>
+      <h1 style="font-size: 16px;" id="paths-fork-title">The fork</h1>
+      <div style="width: 36px;"></div>
+    </div>
+    <div class="paths-screen">
+      <div class="paths-eyebrow">3 YEARS FROM NOW</div>
+      <div class="paths-title" id="paths-title">If you choose...</div>
+
+      <div class="path-card path-a" data-path="a" onclick="pickPath('a')" id="path-card-a">
+        <div class="path-label" id="path-a-label">PATH A</div>
+        <div class="path-title" id="path-a-title">Title A</div>
+        <div class="path-vignette" id="path-a-vignette">Vignette</div>
+        <div class="path-detail-row">
+          <div class="path-detail"><span class="pd-label">Day-to-day</span><span class="pd-text" id="path-a-feel">Feel</span></div>
+          <div class="path-detail"><span class="pd-label">You'd gain</span><span class="pd-text" id="path-a-gain">Gain</span></div>
+          <div class="path-detail"><span class="pd-label">You'd give up</span><span class="pd-text" id="path-a-give">Give up</span></div>
+        </div>
+      </div>
+
+      <div class="path-card path-b" data-path="b" onclick="pickPath('b')" id="path-card-b">
+        <div class="path-label" id="path-b-label">PATH B</div>
+        <div class="path-title" id="path-b-title">Title B</div>
+        <div class="path-vignette" id="path-b-vignette">Vignette</div>
+        <div class="path-detail-row">
+          <div class="path-detail"><span class="pd-label">Day-to-day</span><span class="pd-text" id="path-b-feel">Feel</span></div>
+          <div class="path-detail"><span class="pd-label">You'd gain</span><span class="pd-text" id="path-b-gain">Gain</span></div>
+          <div class="path-detail"><span class="pd-label">You'd give up</span><span class="pd-text" id="path-b-give">Give up</span></div>
+        </div>
+      </div>
+
+      <div class="paths-question">Which one feels more like you?</div>
+    </div>
+    <div class="cta-bar">
+      <button class="cta" id="paths-cta" onclick="confirmPath()" disabled>
+        Pick one to continue
+      </button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="screen-loading" class="screen hidden">
+    <div class="loading-screen">
+      <div class="loading-stars"></div>
+      <div class="loading-text">ENTERING TUESDAY</div>
+      <div class="loading-title" id="loading-title">A morning in your studio.</div>
+      <div class="loading-bar"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- SIMULATION -->
+  <div id="screen-sim" class="screen hidden">
+    <button class="icon-btn on-scene" style="position:absolute; top: 50px; left: 16px; z-index: 16;" onclick="confirmExit()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+
+    <div class="sim-screen">
+      <!-- Top HUD -->
+      <div class="sim-hud">
+        <div style="width: 36px;"></div>
+        <div class="hud-pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span class="hud-time" id="hud-time">9:00 AM</span>
+          <span class="hud-date">Tuesday</span>
+        </div>
+        <div class="day-timeline" id="day-timeline">
+          <div class="day-pip current"></div>
+          <div class="day-pip"></div>
+          <div class="day-pip"></div>
+          <div class="day-pip"></div>
+          <div class="day-pip"></div>
+        </div>
+      </div>
+
+      <!-- Scene -->
+      <div class="scene-container morning" id="scene-container">
+        <svg class="scene-svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <!-- Sky gradients -->
+            <linearGradient id="sky-morning" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#FFE5C2"/>
+              <stop offset="50%" stop-color="#F8C8B0"/>
+              <stop offset="100%" stop-color="#E1B8C6"/>
+            </linearGradient>
+            <linearGradient id="sky-midday" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#9DCBE6"/>
+              <stop offset="100%" stop-color="#C8E0EF"/>
+            </linearGradient>
+            <linearGradient id="sky-afternoon" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#F5BD78"/>
+              <stop offset="60%" stop-color="#E89970"/>
+              <stop offset="100%" stop-color="#C57A6E"/>
+            </linearGradient>
+            <linearGradient id="sky-evening" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#3D3460"/>
+              <stop offset="60%" stop-color="#7A4A6E"/>
+              <stop offset="100%" stop-color="#C8775A"/>
+            </linearGradient>
+            <linearGradient id="sky-debrief" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#1B1A30"/>
+              <stop offset="100%" stop-color="#3D3460"/>
+            </linearGradient>
+
+            <!-- Wood floor gradient -->
+            <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#A37A52"/>
+              <stop offset="100%" stop-color="#8C6240"/>
+            </linearGradient>
+            <linearGradient id="wood-light" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#C29770"/>
+              <stop offset="100%" stop-color="#A37A52"/>
+            </linearGradient>
+
+            <!-- Lamp glow -->
+            <radialGradient id="lamp-pool" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0%" stop-color="#FFD37A" stop-opacity="0.7"/>
+              <stop offset="60%" stop-color="#F8B85F" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#F8B85F" stop-opacity="0"/>
+            </radialGradient>
+
+            <!-- Glass / window reflection -->
+            <linearGradient id="glass-shine" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="white" stop-opacity="0.25"/>
+              <stop offset="50%" stop-color="white" stop-opacity="0.05"/>
+              <stop offset="100%" stop-color="white" stop-opacity="0.18"/>
+            </linearGradient>
+          </defs>
+
+          <!-- WALL -->
+          <rect x="0" y="0" width="800" height="420" fill="#F0E8D8"/>
+          <!-- Wall trim -->
+          <rect x="0" y="415" width="800" height="6" fill="#D8CCB8"/>
+
+          <!-- FLOOR -->
+          <rect x="0" y="420" width="800" height="180" fill="url(#wood)"/>
+          <!-- Floor planks (subtle horizontal lines) -->
+          <line x1="0" y1="460" x2="800" y2="460" stroke="#7A5638" stroke-width="0.5" opacity="0.3"/>
+          <line x1="0" y1="500" x2="800" y2="500" stroke="#7A5638" stroke-width="0.5" opacity="0.3"/>
+          <line x1="0" y1="540" x2="800" y2="540" stroke="#7A5638" stroke-width="0.5" opacity="0.3"/>
+          <line x1="0" y1="580" x2="800" y2="580" stroke="#7A5638" stroke-width="0.5" opacity="0.3"/>
+
+          <!-- WINDOW -->
+          <rect x="540" y="50" width="220" height="240" fill="#F8F2E0" stroke="#3A2E22" stroke-width="3" rx="4"/>
+          <rect class="sky-rect" id="sky-fill" x="546" y="56" width="208" height="228" fill="url(#sky-morning)"/>
+
+          <!-- Window cross-bars -->
+          <line x1="650" y1="56" x2="650" y2="284" stroke="#F8F2E0" stroke-width="4"/>
+          <line x1="546" y1="170" x2="754" y2="170" stroke="#F8F2E0" stroke-width="4"/>
+
+          <!-- View through window: silhouette buildings -->
+          <g opacity="0.45">
+            <rect x="555" y="200" width="35" height="84" fill="#5A4060"/>
+            <rect x="592" y="180" width="28" height="104" fill="#604068"/>
+            <rect x="622" y="220" width="22" height="64" fill="#564060"/>
+            <rect x="660" y="195" width="40" height="89" fill="#604068"/>
+            <rect x="704" y="215" width="24" height="69" fill="#5A4060"/>
+            <rect x="730" y="200" width="20" height="84" fill="#604068"/>
+          </g>
+
+          <!-- Clouds -->
+          <g class="clouds" opacity="0.7">
+            <ellipse cx="600" cy="100" rx="22" ry="6" fill="white"/>
+            <ellipse cx="690" cy="120" rx="28" ry="7" fill="white"/>
+            <ellipse cx="730" cy="80" rx="14" ry="5" fill="white"/>
+          </g>
+
+          <!-- WALL DETAILS: posters / clock -->
+          <!-- Poster 1 -->
+          <g transform="translate(60,100)">
+            <rect width="64" height="80" fill="#FFFFFF" stroke="#3A2E22" stroke-width="2" rx="2"/>
+            <rect x="6" y="6" width="52" height="52" fill="#5B7B66"/>
+            <circle cx="32" cy="32" r="10" fill="#F0E8D8"/>
+            <text x="32" y="74" text-anchor="middle" font-family="serif" font-size="9" fill="#3A2E22">SOULS, 2024</text>
+          </g>
+
+          <!-- Poster 2 -->
+          <g transform="translate(150,140)">
+            <rect width="50" height="64" fill="#FFFFFF" stroke="#3A2E22" stroke-width="2" rx="2"/>
+            <rect x="5" y="5" width="40" height="40" fill="#D9826E"/>
+            <text x="25" y="58" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#3A2E22" font-weight="bold">FORM</text>
+          </g>
+
+          <!-- Wall clock -->
+          <g transform="translate(420,90)">
+            <circle r="32" fill="#FFFFFF" stroke="#3A2E22" stroke-width="2.5"/>
+            <line x1="0" y1="0" x2="0" y2="-22" stroke="#3A2E22" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="0" y1="0" x2="14" y2="6" stroke="#3A2E22" stroke-width="2" stroke-linecap="round"/>
+            <circle r="2.5" fill="#3A2E22"/>
+            <circle cx="0" cy="-26" r="1.5" fill="#3A2E22"/>
+            <circle cx="26" cy="0" r="1.5" fill="#3A2E22"/>
+            <circle cx="0" cy="26" r="1.5" fill="#3A2E22"/>
+            <circle cx="-26" cy="0" r="1.5" fill="#3A2E22"/>
+          </g>
+
+          <!-- Door (left side) -->
+          <g>
+            <rect x="240" y="160" width="80" height="260" fill="#7A5230" stroke="#3A2E22" stroke-width="2"/>
+            <rect x="248" y="170" width="64" height="100" fill="#6A4528" rx="2"/>
+            <rect x="248" y="280" width="64" height="100" fill="#6A4528" rx="2"/>
+            <circle cx="306" cy="290" r="3" fill="#D4A05A"/>
+          </g>
+
+          <!-- RUG (in front of console) -->
+          <ellipse cx="430" cy="510" rx="240" ry="32" fill="#D9826E" opacity="0.85"/>
+          <ellipse cx="430" cy="510" rx="220" ry="28" fill="none" stroke="#B96250" stroke-width="2" opacity="0.7"/>
+
+          <!-- ============== DESK (left) ============== -->
+          <!-- Desk top -->
+          <rect x="40" y="380" width="200" height="14" fill="#8A5A36" stroke="#5C3A20" stroke-width="1"/>
+          <!-- Desk legs -->
+          <rect x="46" y="394" width="6" height="36" fill="#5C3A20"/>
+          <rect x="228" y="394" width="6" height="36" fill="#5C3A20"/>
+
+          <!-- Plant on desk -->
+          <g transform="translate(60,360)">
+            <rect x="-8" y="0" width="20" height="20" fill="#9C5C3D" rx="1"/>
+            <g class="plant-leaves">
+              <path d="M 2 0 Q -10 -16 -16 -28 Q -8 -22 0 -10 Z" fill="#5B7B66"/>
+              <path d="M 2 0 Q 12 -14 16 -28 Q 8 -22 4 -8 Z" fill="#6E8C73"/>
+              <path d="M 2 0 Q 0 -22 -4 -34 Q 4 -28 4 -14 Z" fill="#5B7B66"/>
+            </g>
+          </g>
+
+          <!-- Lamp on desk -->
+          <g transform="translate(110,300)">
+            <!-- Lamp pool (visible evening) -->
+            <ellipse class="lamp-glow" cx="0" cy="100" rx="120" ry="80" fill="url(#lamp-pool)"/>
+            <!-- Pole -->
+            <line x1="0" y1="80" x2="0" y2="20" stroke="#3A2E22" stroke-width="3"/>
+            <!-- Joint -->
+            <circle cx="0" cy="20" r="4" fill="#3A2E22"/>
+            <!-- Arm -->
+            <line x1="0" y1="20" x2="22" y2="6" stroke="#3A2E22" stroke-width="3"/>
+            <!-- Shade -->
+            <path d="M 22 6 L 38 -10 L 50 16 L 32 22 Z" fill="#D9826E" stroke="#3A2E22" stroke-width="2"/>
+            <!-- Base -->
+            <rect x="-12" y="78" width="24" height="6" fill="#3A2E22" rx="1"/>
+          </g>
+
+          <!-- Laptop on desk -->
+          <g transform="translate(160,360)">
+            <!-- Base -->
+            <rect x="0" y="14" width="64" height="6" fill="#1F1D1B" rx="1"/>
+            <!-- Screen -->
+            <rect x="2" y="-18" width="60" height="34" fill="#1F1D1B" stroke="#3A2E22" stroke-width="1" rx="1"/>
+            <!-- Screen inside -->
+            <rect x="5" y="-15" width="54" height="28" fill="#3D5746"/>
+            <!-- Audio waveform on screen -->
+            <g opacity="0.6">
+              <line x1="10" y1="-1" x2="10" y2="-1" stroke="#5B7B66" stroke-width="1.5"/>
+              <rect x="9" y="-3" width="1.5" height="4" fill="#A8C0AF"/>
+              <rect x="14" y="-6" width="1.5" height="10" fill="#A8C0AF"/>
+              <rect x="19" y="-2" width="1.5" height="2" fill="#A8C0AF"/>
+              <rect x="24" y="-8" width="1.5" height="14" fill="#A8C0AF"/>
+              <rect x="29" y="-4" width="1.5" height="6" fill="#A8C0AF"/>
+              <rect x="34" y="-7" width="1.5" height="11" fill="#A8C0AF"/>
+              <rect x="39" y="-3" width="1.5" height="4" fill="#A8C0AF"/>
+              <rect x="44" y="-9" width="1.5" height="13" fill="#A8C0AF"/>
+              <rect x="49" y="-5" width="1.5" height="6" fill="#A8C0AF"/>
+              <rect x="54" y="-2" width="1.5" height="2" fill="#A8C0AF"/>
+            </g>
+          </g>
+
+          <!-- Coffee mug -->
+          <g transform="translate(80,365)">
+            <rect x="0" y="0" width="14" height="16" fill="#FFFFFF" stroke="#3A2E22" stroke-width="1" rx="1"/>
+            <path d="M 14 4 Q 20 6 20 8 Q 20 10 14 12" fill="none" stroke="#3A2E22" stroke-width="1.5"/>
+            <ellipse cx="7" cy="2" rx="6" ry="1.5" fill="#5C3A20"/>
+          </g>
+
+          <!-- ============== CONSOLE (center) ============== -->
+          <!-- Console body -->
+          <rect x="335" y="430" width="200" height="60" fill="#2A2A30" stroke="#1A1A20" stroke-width="1.5" rx="3"/>
+          <!-- Console top angled -->
+          <path d="M 335 430 L 335 420 L 535 420 L 535 430 Z" fill="#3A3A42"/>
+          <!-- Console legs -->
+          <rect x="343" y="490" width="4" height="20" fill="#1A1A20"/>
+          <rect x="523" y="490" width="4" height="20" fill="#1A1A20"/>
+
+          <!-- Mixer faders -->
+          <g transform="translate(345,432)">
+            <rect x="0" y="0" width="80" height="3" fill="#1A1A20"/>
+            <rect x="2" y="-3" width="6" height="9" fill="#FFD37A" rx="1"/>
+            <rect x="14" y="-3" width="6" height="9" fill="#FFD37A" rx="1"/>
+            <rect x="26" y="-3" width="6" height="9" fill="#FFD37A" rx="1"/>
+            <rect x="38" y="-3" width="6" height="9" fill="#FFD37A" rx="1"/>
+            <rect x="50" y="-3" width="6" height="9" fill="#FFD37A" rx="1"/>
+            <rect x="62" y="-3" width="6" height="9" fill="#FFD37A" rx="1"/>
+
+            <line x1="0" y1="14" x2="80" y2="14" stroke="#1A1A20" stroke-width="1"/>
+            <rect x="6" y="11" width="3" height="6" fill="#A8C0AF"/>
+            <rect x="18" y="11" width="3" height="6" fill="#A8C0AF"/>
+            <rect x="30" y="11" width="3" height="6" fill="#A8C0AF"/>
+            <rect x="42" y="11" width="3" height="6" fill="#A8C0AF"/>
+            <rect x="54" y="11" width="3" height="6" fill="#A8C0AF"/>
+            <rect x="66" y="11" width="3" height="6" fill="#A8C0AF"/>
+          </g>
+
+          <!-- Knobs row -->
+          <g transform="translate(440,442)">
+            <circle cx="0" cy="0" r="6" fill="#3A3A42" stroke="#5A5A60"/>
+            <line x1="0" y1="0" x2="3" y2="-4" stroke="#FFD37A" stroke-width="1.5"/>
+            <circle cx="16" cy="0" r="6" fill="#3A3A42" stroke="#5A5A60"/>
+            <line x1="16" y1="0" x2="19" y2="-3" stroke="#FFD37A" stroke-width="1.5"/>
+            <circle cx="32" cy="0" r="6" fill="#3A3A42" stroke="#5A5A60"/>
+            <line x1="32" y1="0" x2="34" y2="-5" stroke="#FFD37A" stroke-width="1.5"/>
+            <circle cx="48" cy="0" r="6" fill="#3A3A42" stroke="#5A5A60"/>
+            <line x1="48" y1="0" x2="51" y2="-3" stroke="#FFD37A" stroke-width="1.5"/>
+            <circle cx="64" cy="0" r="6" fill="#3A3A42" stroke="#5A5A60"/>
+            <line x1="64" y1="0" x2="62" y2="-4" stroke="#FFD37A" stroke-width="1.5"/>
+            <circle cx="80" cy="0" r="6" fill="#3A3A42" stroke="#5A5A60"/>
+            <line x1="80" y1="0" x2="83" y2="-3" stroke="#FFD37A" stroke-width="1.5"/>
+          </g>
+
+          <!-- Display screen on console -->
+          <g transform="translate(440,460)">
+            <rect width="80" height="20" fill="#1B2826" stroke="#5A5A60" rx="1"/>
+            <rect x="3" y="4" width="20" height="3" fill="#5B7B66" opacity="0.7"/>
+            <rect x="3" y="10" width="36" height="3" fill="#5B7B66" opacity="0.5"/>
+            <rect x="60" y="4" width="16" height="3" fill="#D9826E" opacity="0.7"/>
+            <rect x="65" y="10" width="11" height="3" fill="#D9826E" opacity="0.5"/>
+          </g>
+
+          <!-- Speaker monitors on top of desk above console -->
+          <g transform="translate(355,395)">
+            <rect width="32" height="32" fill="#1F1D1B" stroke="#3A3A42" rx="2"/>
+            <circle cx="16" cy="20" r="9" fill="#3A3A42"/>
+            <circle cx="16" cy="20" r="6" fill="#1A1A20"/>
+            <circle cx="16" cy="9" r="4" fill="#3A3A42"/>
+            <circle cx="16" cy="9" r="2" fill="#1A1A20"/>
+          </g>
+          <g transform="translate(485,395)">
+            <rect width="32" height="32" fill="#1F1D1B" stroke="#3A3A42" rx="2"/>
+            <circle cx="16" cy="20" r="9" fill="#3A3A42"/>
+            <circle cx="16" cy="20" r="6" fill="#1A1A20"/>
+            <circle cx="16" cy="9" r="4" fill="#3A3A42"/>
+            <circle cx="16" cy="9" r="2" fill="#1A1A20"/>
+          </g>
+
+          <!-- ============== MIC BOOTH (right) ============== -->
+          <!-- Booth back wall -->
+          <rect x="600" y="320" width="160" height="100" fill="#3A2E22" opacity="0.85"/>
+          <!-- Acoustic foam -->
+          <g opacity="0.6">
+            <rect x="610" y="330" width="14" height="14" fill="#5A4036"/>
+            <rect x="630" y="330" width="14" height="14" fill="#4A3026"/>
+            <rect x="650" y="330" width="14" height="14" fill="#5A4036"/>
+            <rect x="670" y="330" width="14" height="14" fill="#4A3026"/>
+            <rect x="690" y="330" width="14" height="14" fill="#5A4036"/>
+            <rect x="710" y="330" width="14" height="14" fill="#4A3026"/>
+            <rect x="730" y="330" width="14" height="14" fill="#5A4036"/>
+
+            <rect x="610" y="350" width="14" height="14" fill="#4A3026"/>
+            <rect x="630" y="350" width="14" height="14" fill="#5A4036"/>
+            <rect x="650" y="350" width="14" height="14" fill="#4A3026"/>
+            <rect x="670" y="350" width="14" height="14" fill="#5A4036"/>
+            <rect x="690" y="350" width="14" height="14" fill="#4A3026"/>
+            <rect x="710" y="350" width="14" height="14" fill="#5A4036"/>
+            <rect x="730" y="350" width="14" height="14" fill="#4A3026"/>
+
+            <rect x="610" y="370" width="14" height="14" fill="#5A4036"/>
+            <rect x="630" y="370" width="14" height="14" fill="#4A3026"/>
+            <rect x="650" y="370" width="14" height="14" fill="#5A4036"/>
+            <rect x="670" y="370" width="14" height="14" fill="#4A3026"/>
+            <rect x="690" y="370" width="14" height="14" fill="#5A4036"/>
+            <rect x="710" y="370" width="14" height="14" fill="#4A3026"/>
+            <rect x="730" y="370" width="14" height="14" fill="#5A4036"/>
+
+            <rect x="610" y="390" width="14" height="14" fill="#4A3026"/>
+            <rect x="630" y="390" width="14" height="14" fill="#5A4036"/>
+            <rect x="650" y="390" width="14" height="14" fill="#4A3026"/>
+            <rect x="670" y="390" width="14" height="14" fill="#5A4036"/>
+            <rect x="690" y="390" width="14" height="14" fill="#4A3026"/>
+            <rect x="710" y="390" width="14" height="14" fill="#5A4036"/>
+            <rect x="730" y="390" width="14" height="14" fill="#4A3026"/>
+          </g>
+
+          <!-- Mic stand inside booth -->
+          <g transform="translate(680,360)">
+            <line x1="0" y1="0" x2="0" y2="60" stroke="#1F1D1B" stroke-width="3"/>
+            <ellipse cx="0" cy="60" rx="12" ry="3" fill="#1F1D1B"/>
+            <!-- Mic head -->
+            <circle cx="0" cy="-6" r="9" fill="#2A2A30" stroke="#5A5A60" stroke-width="1"/>
+            <ellipse cx="0" cy="-6" rx="6" ry="6" fill="#1A1A20"/>
+          </g>
+
+          <!-- Glass partition (transparent panel) -->
+          <rect x="595" y="220" width="170" height="200" fill="url(#glass-shine)" opacity="0.45" rx="2"/>
+          <rect x="595" y="220" width="170" height="200" fill="none" stroke="#A0A0A8" stroke-width="1" rx="2"/>
+          <rect x="595" y="220" width="170" height="6" fill="#3A2E22"/>
+
+          <!-- ============== CHARACTERS (4 poses, only one visible) ============== -->
+
+          <!-- Pose 1: At desk, sitting, looking at laptop (morning) -->
+          <g class="char-pose" id="char-desk">
+            <!-- Chair back -->
+            <rect x="100" y="345" width="36" height="50" fill="#5A4036" stroke="#3A2E22" stroke-width="1.5" rx="3"/>
+            <!-- Body / shirt -->
+            <ellipse class="breath" cx="118" cy="370" rx="22" ry="26" fill="#D9826E"/>
+            <!-- Head -->
+            <circle cx="118" cy="332" r="15" fill="#E8B89A"/>
+            <!-- Hair -->
+            <path d="M 105 327 Q 118 314 131 327 L 130 322 Q 118 308 106 322 Z" fill="#3A2820"/>
+            <!-- Eye (looking down at laptop) -->
+            <circle cx="124" cy="335" r="1.5" fill="#1F1D1B"/>
+            <!-- Mouth: small line -->
+            <path d="M 120 342 Q 124 343 128 342" stroke="#7A5638" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+            <!-- Arms: reaching forward toward laptop -->
+            <path d="M 130 360 Q 150 358 168 360 L 168 366 Q 150 364 130 366 Z" fill="#D9826E"/>
+            <!-- Headphones around neck -->
+            <path d="M 105 348 Q 118 344 131 348" stroke="#1F1D1B" stroke-width="2" fill="none"/>
+            <ellipse cx="103" cy="352" rx="4" ry="6" fill="#1F1D1B"/>
+            <ellipse cx="133" cy="352" rx="4" ry="6" fill="#1F1D1B"/>
+          </g>
+
+          <!-- Pose 2: Standing in middle, looking right toward booth (midday) -->
+          <g class="char-pose" id="char-standing">
+            <!-- Legs -->
+            <rect x="385" y="448" width="9" height="40" fill="#3D4858"/>
+            <rect x="396" y="448" width="9" height="40" fill="#3D4858"/>
+            <!-- Body -->
+            <ellipse class="breath" cx="395" cy="430" rx="20" ry="26" fill="#D9826E"/>
+            <!-- Head -->
+            <circle cx="395" cy="396" r="15" fill="#E8B89A"/>
+            <!-- Hair -->
+            <path d="M 382 391 Q 395 378 408 391 L 407 386 Q 395 372 383 386 Z" fill="#3A2820"/>
+            <!-- Eyes (looking right) -->
+            <circle cx="402" cy="397" r="1.5" fill="#1F1D1B"/>
+            <circle cx="394" cy="398" r="1.2" fill="#1F1D1B"/>
+            <!-- Mouth: pursed -->
+            <line x1="396" y1="404" x2="402" y2="404" stroke="#7A5638" stroke-width="1.2" stroke-linecap="round"/>
+            <!-- Arms: at sides -->
+            <rect x="375" y="418" width="8" height="32" fill="#D9826E" rx="3"/>
+            <rect x="408" y="418" width="8" height="32" fill="#D9826E" rx="3"/>
+            <!-- Headphones around neck -->
+            <path d="M 382 412 Q 395 408 408 412" stroke="#1F1D1B" stroke-width="2" fill="none"/>
+            <ellipse cx="380" cy="416" rx="4" ry="6" fill="#1F1D1B"/>
+            <ellipse cx="410" cy="416" rx="4" ry="6" fill="#1F1D1B"/>
+          </g>
+
+          <!-- Pose 3: At console, sitting, hands on knobs (afternoon) -->
+          <g class="char-pose" id="char-console">
+            <!-- Stool -->
+            <rect x="425" y="460" width="20" height="34" fill="#5A4036" stroke="#3A2E22" stroke-width="1.5" rx="2"/>
+            <!-- Body slightly forward -->
+            <ellipse class="breath" cx="435" cy="438" rx="20" ry="22" fill="#D9826E"/>
+            <!-- Head looking down -->
+            <circle cx="435" cy="408" r="14" fill="#E8B89A"/>
+            <!-- Hair -->
+            <path d="M 423 403 Q 435 391 447 403 L 446 399 Q 435 386 424 399 Z" fill="#3A2820"/>
+            <!-- Eye looking down -->
+            <circle cx="438" cy="412" r="1.5" fill="#1F1D1B"/>
+            <!-- Mouth: focused/concerned -->
+            <line x1="432" y1="418" x2="440" y2="418" stroke="#7A5638" stroke-width="1.2" stroke-linecap="round"/>
+            <!-- Arms reaching forward to console -->
+            <path d="M 418 432 Q 415 442 418 452 L 426 452 Q 426 442 426 432 Z" fill="#D9826E"/>
+            <path d="M 444 432 Q 446 442 446 452 L 454 452 Q 454 442 452 432 Z" fill="#D9826E"/>
+            <!-- Headphones ON head -->
+            <path d="M 421 400 Q 435 386 449 400" stroke="#1F1D1B" stroke-width="3" fill="none"/>
+            <ellipse cx="420" cy="408" rx="5" ry="7" fill="#1F1D1B"/>
+            <ellipse cx="450" cy="408" rx="5" ry="7" fill="#1F1D1B"/>
+          </g>
+
+          <!-- Vocalist NPC (appears in midday scene, walks toward booth) -->
+          <g class="npc-vocalist" id="npc-vocalist">
+            <!-- Legs -->
+            <rect x="495" y="448" width="9" height="40" fill="#5C3A20"/>
+            <rect x="506" y="448" width="9" height="40" fill="#5C3A20"/>
+            <!-- Body in mustard top -->
+            <ellipse cx="505" cy="430" rx="20" ry="26" fill="#D4A05A"/>
+            <!-- Head -->
+            <circle cx="505" cy="396" r="15" fill="#D4A48A"/>
+            <!-- Hair (longer, dark) -->
+            <path d="M 489 391 Q 505 374 521 391 L 522 410 Q 521 388 505 380 Q 489 388 488 410 Z" fill="#2A1A18"/>
+            <!-- Eyes -->
+            <circle cx="500" cy="397" r="1.4" fill="#1F1D1B"/>
+            <circle cx="510" cy="397" r="1.4" fill="#1F1D1B"/>
+            <!-- Mouth -->
+            <path d="M 502 404 Q 505 405 508 404" stroke="#7A5638" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+            <!-- Arms -->
+            <rect x="485" y="420" width="8" height="32" fill="#D4A05A" rx="3"/>
+            <rect x="518" y="420" width="8" height="32" fill="#D4A05A" rx="3"/>
+            <!-- Bag strap -->
+            <path d="M 495 416 Q 505 420 515 416" stroke="#3A2820" stroke-width="2" fill="none"/>
+          </g>
+
+          <!-- Pose 4: At desk, evening pose, head down, contemplative -->
+          <g class="char-pose" id="char-evening">
+            <!-- Chair back -->
+            <rect x="100" y="345" width="36" height="50" fill="#5A4036" stroke="#3A2E22" stroke-width="1.5" rx="3"/>
+            <!-- Body / shirt -->
+            <ellipse class="breath" cx="118" cy="370" rx="22" ry="26" fill="#D9826E"/>
+            <!-- Head, slightly down -->
+            <circle cx="118" cy="338" r="15" fill="#E8B89A"/>
+            <!-- Hair -->
+            <path d="M 105 333 Q 118 320 131 333 L 130 328 Q 118 314 106 328 Z" fill="#3A2820"/>
+            <!-- Eye (closed-ish, just a line) -->
+            <line x1="121" y1="343" x2="127" y2="343" stroke="#1F1D1B" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- Mouth: small -->
+            <line x1="120" y1="349" x2="125" y2="349" stroke="#7A5638" stroke-width="1.2" stroke-linecap="round"/>
+            <!-- Arms: hands on desk, more relaxed -->
+            <path d="M 100 366 Q 100 374 100 382 L 108 382 Q 108 374 108 366 Z" fill="#D9826E"/>
+            <path d="M 130 360 Q 150 358 168 360 L 168 366 Q 150 364 130 366 Z" fill="#D9826E"/>
+            <!-- Headphones around neck -->
+            <path d="M 105 354 Q 118 350 131 354" stroke="#1F1D1B" stroke-width="2" fill="none"/>
+            <ellipse cx="103" cy="358" rx="4" ry="6" fill="#1F1D1B"/>
+            <ellipse cx="133" cy="358" rx="4" ry="6" fill="#1F1D1B"/>
+          </g>
+        </svg>
+
+        <!-- Time-of-day overlay -->
+        <div class="tod-overlay"></div>
+      </div>
+
+      <!-- Bottom dialog area -->
+      <div class="dialog-area">
+        <div class="narration" id="narration">
+          <div class="narration-label" id="narration-label">YOU NOTICE</div>
+          <div class="narration-text" id="narration-text"></div>
+        </div>
+        <div class="choices" id="choices"></div>
+      </div>
+
+      <!-- Reaction bubble (floating, positioned by JS) -->
+      <div class="reaction-bubble" id="reaction-bubble">
+        <div class="reaction-label" id="reaction-label">YOU</div>
+        <div id="reaction-text"></div>
+      </div>
+
+      <!-- Thought bubbles container (added dynamically) -->
+      <div id="thoughts-layer"></div>
+
+      <!-- Activity icons container (added dynamically) -->
+      <div id="activities-layer"></div>
+
+      <!-- Subtitle narration (toggleable) -->
+      <div class="subtitle" id="subtitle">
+        <div class="subtitle-card" id="subtitle-card"></div>
+      </div>
+
+      <!-- Observer mode controls -->
+      <div class="sim-controls hidden-controls" id="sim-controls">
+        <button class="ctrl-btn" id="btn-pause" onclick="togglePause()" title="Pause / play">
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+        </button>
+        <button class="ctrl-btn" id="btn-speed" onclick="cycleSpeed()" title="Speed">1×</button>
+        <button class="ctrl-btn" id="btn-cc" onclick="toggleCC()" title="Toggle subtitles">CC</button>
+        <button class="ctrl-btn" onclick="skipObservation()" title="Skip to next moment">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 4l10 8-10 8V4zm12 0h2v16h-2V4z"/></svg>
+        </button>
+      </div>
+
+      <!-- Time skip overlay -->
+      <div class="timeskip" id="timeskip">
+        <div class="timeskip-label" id="timeskip-label">LATER THAT DAY</div>
+        <div class="timeskip-time" id="timeskip-time">12:40 PM</div>
+        <div class="timeskip-where" id="timeskip-where">Same studio</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POSTCARD -->
+  <div id="screen-postcard" class="screen hidden">
+    <div class="app-header">
+      <div style="width: 36px;"></div>
+      <h1 style="font-size: 16px;">A postcard from future you</h1>
+      <div style="width: 36px;"></div>
+    </div>
+    <div class="postcard-screen">
+      <div class="postcard">
+        <div class="postcard-stamp">OPEN<br/>WHEN<br/>READY</div>
+        <div class="postcard-from">FROM YOU AT 21</div>
+        <div class="postcard-to">To today-me,</div>
+        <div class="postcard-body" id="postcard-body">
+          <p>I remembered the day you tried to figure out if you wanted to make music. I was there too.</p>
+          <p>You said the part you liked wasn't making the music. It was solving the vocalist-being-late thing. You said you liked running things.</p>
+          <p>Trust that. The smallest version of running things is the next thing to try. Not the music. Not yet. Just the running.</p>
+          <p>Whatever you do, don't apologize for liking it.</p>
+          <p class="postcard-sig">— me, four years from now</p>
+        </div>
+      </div>
+
+      <div class="seal-section">
+        <h3>Seal it. Open it later.</h3>
+        <p>Your postcard will be private and unreadable until the date you choose.</p>
+        <div class="date-options">
+          <div class="date-chip" data-date="3m" onclick="pickDate('3m')">In 3 months</div>
+          <div class="date-chip selected" data-date="endyr" onclick="pickDate('endyr')">End of this year</div>
+          <div class="date-chip" data-date="endsec" onclick="pickDate('endsec')">End of secondary</div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-bar">
+      <button class="cta" onclick="goIfthen()">
+        Continue
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- IF-THEN -->
+  <div id="screen-ifthen" class="screen hidden">
+    <div class="app-header">
+      <button class="icon-btn" onclick="goPostcard()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+      </button>
+      <h1 style="font-size: 16px;">One small thing</h1>
+      <div style="width: 36px;"></div>
+    </div>
+    <div class="ifthen-screen">
+      <div class="ifthen-q">What's the smallest version you could try this week?</div>
+      <div class="ifthen-from-future">
+        <strong>Future you said:</strong>
+        <span id="ifthen-future-quote">"The smallest version of running things is the next thing to try. Not the music. Not yet. Just the running."</span>
+      </div>
+      <div class="ifthen-fields">
+        <div class="ifthen-row">
+          <div class="ifthen-label">WHEN</div>
+          <input type="text" class="ifthen-input" id="ifthen-when" value="Tomorrow at 2pm" />
+        </div>
+        <div class="ifthen-row">
+          <div class="ifthen-label">I WILL</div>
+          <input type="text" class="ifthen-input" id="ifthen-what" value="message the band leader and offer to coordinate the gear setup" />
+        </div>
+      </div>
+      <div class="ifthen-reminder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span>Remind me tomorrow at 2pm</span>
+        <div class="switch on" style="margin-left: auto;" id="reminder-switch" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+    <div class="cta-bar">
+      <button class="cta" onclick="goDone()">
+        Save
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- DONE -->
+  <div id="screen-done" class="screen hidden">
+    <div class="done-screen">
+      <div class="done-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div class="done-title">Saved.</div>
+      <div class="done-sub">Your postcard is sealed until the end of the year. We'll nudge you tomorrow about the small thing.</div>
+      <div class="done-card">
+        <div class="when">TOMORROW · 2:00 PM</div>
+        <div class="what" id="done-what">I will message the band leader and offer to coordinate the gear setup.</div>
+      </div>
+      <button class="cta" style="max-width: 240px; margin-top: 16px;" onclick="goModes()">
+        Done
+      </button>
+    </div>
+  </div>
+
+</div>
+</div><!-- /layout-wrap -->
+
+<script>
+  // =====================================
+  // STATE
+  // =====================================
+  let chosenAge = 21;
+  let chosenVersion = "music producer";
+  let currentSceneIndex = 0;
+  let chosenAnswers = []; // {scene: 'morning', choice: 0}
+  let currentMode = "tryDay"; // "tryDay" | "talkTo" | "branching"
+  let chosenFork = "subject";
+  let chosenPath = null; // "a" or "b"
+  let chatTurn = 0;
+
+  // =====================================
+  // SCENE DATA — pure observation (subtitles narrate; future-you decides)
+  // =====================================
+  const sceneData = [
+    {
+      key: "morning",
+      time: "9:00 AM",
+      timeOfDay: "morning",
+      character: "char-desk",
+      duration: 17500,
+      subtitles: [
+        { at: 1200, text: "Tuesday morning. The studio is quiet.", duration: 4000 },
+        { at: 6000, text: "An email lands. Mark wants to renegotiate the rate for tomorrow.", duration: 4500 },
+        { at: 11000, text: "Future-you replies: \"Why?\"", duration: 3500, narrator: "ACTION" },
+        { at: 14800, text: "His budget got cut. They settle on half-fee, reduced scope.", duration: 2500 }
+      ],
+      thoughts: [
+        { at: 2500, text: "Coffee's not strong enough.", at_pos: "desk", duration: 2800 },
+        { at: 8500, text: "Mark's tone is off.", at_pos: "desk", duration: 2500 }
+      ],
+      activities: [
+        { at: 5500, icon: "✉", at_pos: "desk-top", duration: 4500, flavor: "warm" }
+      ]
+    },
+    {
+      key: "midday",
+      time: "12:40 PM",
+      timeOfDay: "midday",
+      character: "char-standing",
+      duration: 16000,
+      subtitles: [
+        { at: 1200, text: "12:40 PM. The vocalist isn't here.", duration: 3500 },
+        { at: 5500, text: "Forty minutes late. Phone is off.", duration: 4000 },
+        { at: 10000, text: "Future-you calls her.", duration: 3000, narrator: "ACTION" },
+        { at: 13200, text: "She'd missed the bus. They start an hour late but make the song.", duration: 2700 }
+      ],
+      thoughts: [
+        { at: 2500, text: "She should be here.", at_pos: "standing", duration: 2500 }
+      ],
+      activities: [
+        { at: 4500, icon: "?", at_pos: "standing-top", duration: 3500, flavor: "yellow" }
+      ]
+    },
+    {
+      key: "afternoon",
+      time: "3:30 PM",
+      timeOfDay: "afternoon",
+      character: "char-console",
+      duration: 18500,
+      subtitles: [
+        { at: 1500, text: "3:30 PM. Vocals tracked. Back to mixing.", duration: 4000 },
+        { at: 6000, text: "The mid-range is wrong. Two hours of pushing.", duration: 4500 },
+        { at: 11000, text: "Future-you stands up. Goes for a 30-minute walk.", duration: 3500, narrator: "ACTION" },
+        { at: 14800, text: "Comes back, hears it fresh, fixes it in 20 minutes.", duration: 3500 }
+      ],
+      thoughts: [
+        { at: 8500, text: "I'm tired. I know it.", at_pos: "console", duration: 2500 }
+      ],
+      activities: [
+        { at: 3500, icon: "♪", at_pos: "console-top", duration: 3000, flavor: "cool" },
+        { at: 8500, icon: "!", at_pos: "console-top", duration: 2500, flavor: "warm" }
+      ],
+      events: [
+        { at: 800, action: "vocalistCameo" }
+      ]
+    },
+    {
+      key: "evening",
+      time: "6:15 PM",
+      timeOfDay: "evening",
+      character: "char-evening",
+      duration: 14000,
+      subtitles: [
+        { at: 1200, text: "6:15 PM. Lamp on. Studio quiet.", duration: 3500 },
+        { at: 5200, text: "A message. Yesterday's drum sample wasn't cleared.", duration: 4500 },
+        { at: 10200, text: "Future-you pays the licensing fee. Tells the client.", duration: 3500, narrator: "ACTION" }
+      ],
+      thoughts: [
+        { at: 7500, text: "Stings. But it's clean.", at_pos: "evening", duration: 2500 }
+      ],
+      activities: [
+        { at: 4500, icon: "✉", at_pos: "evening-top", duration: 3500, flavor: "warm" }
+      ]
+    },
+    {
+      key: "debrief",
+      time: "8:30 PM",
+      timeOfDay: "debrief",
+      character: "char-evening",
+      duration: 6500,
+      subtitles: [
+        { at: 800, text: "8:30 PM. Long day.", duration: 2200 },
+        { at: 3300, text: "Future-you turns to look at you.", duration: 3000, narrator: "MOMENT" }
+      ],
+      thoughts: [],
+      activities: [],
+      choices: [
+        { text: "The morning email — figuring out what to ask.", insight: "curiosity", reaction: "" },
+        { text: "The vocalist thing — solving it.", insight: "running-things", reaction: "" },
+        { text: "The mix — knowing when to scrap it.", insight: "craft", reaction: "" },
+        { text: "The sample — handling it cleanly.", insight: "integrity", reaction: "" }
+      ],
+      debriefQuestion: "Which moment lit you up?",
+      isDebrief: true
+    }
+  ];
+
+  // =====================================
+  // OBSERVER MODE STATE
+  // =====================================
+  let observerSpeed = 1; // 1 or 2
+  let observerPaused = false;
+  let observerTimeouts = [];
+  let observerSkipped = false;
+  let ccEnabled = true;
+  let activeSubtitleId = 0;
+
+  // Position lookup: where to anchor thought bubbles and icons per character pose
+  const positions = {
+    "desk":          { left: "22%", top: "44%" },
+    "desk-top":      { left: "16%", top: "32%" },
+    "standing":      { left: "38%", top: "42%" },
+    "standing-top":  { left: "40%", top: "30%" },
+    "console":       { left: "44%", top: "44%" },
+    "console-top":   { left: "46%", top: "34%" },
+    "evening":       { left: "22%", top: "44%" },
+    "evening-top":   { left: "16%", top: "32%" }
+  };
+
+  // Insights for the debrief, with their tail/postcard text
+  const insights = {
+    "curiosity": {
+      bubble: "That's not a producer thing. That's a curiosity thing. You like figuring out what people actually mean before answering. Worth paying attention to.",
+      postcard: [
+        "I remembered the day you tried to figure out if you wanted to make music. I was there too.",
+        "You said the part you liked wasn't the making. It was the morning, asking the client what he actually meant.",
+        "That's a curiosity thing. The smallest version of being curious about people is asking one real question, this week. That's the next thing.",
+        "Whatever you do, don't apologize for liking it."
+      ],
+      futureQuote: '"The smallest version of being curious about people is asking one real question. That\'s the next thing."',
+      ifthenWhat: "ask one classmate what they actually mean when they describe their CCA",
+      ifthenWhen: "Tomorrow during break"
+    },
+    "running-things": {
+      bubble: "That's not a music thing. That's a running-things thing. You like solving people-problems when stuff falls apart. Pay attention to that.",
+      postcard: [
+        "I remembered the day you tried to figure out if you wanted to make music. I was there too.",
+        "You said the part you liked wasn't making the music. It was solving the vocalist-being-late thing. You said you liked running things.",
+        "Trust that. The smallest version of running things is the next thing to try. Not the music. Not yet. Just the running.",
+        "Whatever you do, don't apologize for liking it."
+      ],
+      futureQuote: '"The smallest version of running things is the next thing to try. Not the music. Not yet. Just the running."',
+      ifthenWhat: "message the band leader and offer to coordinate the gear setup",
+      ifthenWhen: "Tomorrow at 2pm"
+    },
+    "craft": {
+      bubble: "That's not a producer thing. That's a craft thing. You respect when something isn't working and you're willing to start over. That instinct is rare.",
+      postcard: [
+        "I remembered the day you tried to figure out if you wanted to make music. I was there too.",
+        "You said the part you liked wasn't the music. It was knowing when the mix wasn't right and being willing to scrap it.",
+        "That's a craft instinct. The smallest version is letting one thing be unfinished this week, instead of forcing it to be done.",
+        "Whatever you do, don't apologize for liking it."
+      ],
+      futureQuote: '"The smallest version of craft is letting one thing be unfinished this week, instead of forcing it to be done."',
+      ifthenWhat: "leave one piece of homework unfinished if it's not working, and come back to it fresh",
+      ifthenWhen: "This week, when something feels stuck"
+    },
+    "integrity": {
+      bubble: "That's not a producer thing. That's an integrity thing. You like clean dealings, even when they cost you. Worth paying attention to.",
+      postcard: [
+        "I remembered the day you tried to figure out if you wanted to make music. I was there too.",
+        "You said the part you liked wasn't the music. It was telling the client the truth about the sample.",
+        "That's an integrity thing. The smallest version is one honest conversation this week, where you'd usually keep something to yourself.",
+        "Whatever you do, don't apologize for liking it."
+      ],
+      futureQuote: '"The smallest version of integrity is one honest conversation this week, where you\'d usually keep something to yourself."',
+      ifthenWhat: "tell my friend the real reason I didn't go on Saturday",
+      ifthenWhen: "Tomorrow"
+    }
+  };
+
+  // =====================================
+  // AGE-80 SCENE DATA
+  // =====================================
+  const sceneData80 = [
+    {
+      key: "morning",
+      time: "8:30 AM",
+      timeOfDay: "morning",
+      character: "char-desk",
+      duration: 17500,
+      subtitles: [
+        { at: 1200, text: "Tuesday morning. Tea cooling on the table.", duration: 4000 },
+        { at: 6000, text: "A message from Kai. He wants to come by this afternoon.", duration: 4500 },
+        { at: 11000, text: "Future-you replies: \"I'll have the kettle on.\"", duration: 3500, narrator: "ACTION" },
+        { at: 14800, text: "Some days, that's the whole plan. It's enough.", duration: 2500 }
+      ],
+      thoughts: [
+        { at: 2500, text: "Quiet morning.", at_pos: "desk", duration: 2800 },
+        { at: 8500, text: "He doesn't call just anyone.", at_pos: "desk", duration: 2500 }
+      ],
+      activities: [
+        { at: 5500, icon: "✉", at_pos: "desk-top", duration: 4500, flavor: "warm" }
+      ]
+    },
+    {
+      key: "midday",
+      time: "11:00 AM",
+      timeOfDay: "midday",
+      character: "char-standing",
+      duration: 16000,
+      subtitles: [
+        { at: 1200, text: "11:00 AM. The garden hasn't been touched in weeks.", duration: 3500 },
+        { at: 5500, text: "Knees stiff. The trowel is heavier than it used to be.", duration: 4000 },
+        { at: 10000, text: "Future-you kneels anyway. Forty minutes pass.", duration: 3000, narrator: "ACTION" },
+        { at: 13200, text: "There's still satisfaction in finishing a row.", duration: 2700 }
+      ],
+      thoughts: [
+        { at: 2500, text: "Still moving. Good.", at_pos: "standing", duration: 2500 }
+      ],
+      activities: [
+        { at: 4500, icon: "✿", at_pos: "standing-top", duration: 3500, flavor: "cool" }
+      ]
+    },
+    {
+      key: "afternoon",
+      time: "3:00 PM",
+      timeOfDay: "afternoon",
+      character: "char-console",
+      duration: 18500,
+      subtitles: [
+        { at: 1500, text: "3:00 PM. Kai arrives. He wants to learn something.", duration: 4000 },
+        { at: 6000, text: "Future-you shows him the thing you've spent your life getting good at.", duration: 4500 },
+        { at: 11000, text: "He struggles. He tries again. Future-you waits.", duration: 3500, narrator: "ACTION" },
+        { at: 14800, text: "An hour later he almost has it. You remember being his age.", duration: 3500 }
+      ],
+      thoughts: [
+        { at: 8500, text: "He's got it in him.", at_pos: "console", duration: 2500 }
+      ],
+      activities: [
+        { at: 3500, icon: "♪", at_pos: "console-top", duration: 3000, flavor: "cool" },
+        { at: 8500, icon: "★", at_pos: "console-top", duration: 2500, flavor: "warm" }
+      ]
+    },
+    {
+      key: "evening",
+      time: "6:00 PM",
+      timeOfDay: "evening",
+      character: "char-evening",
+      duration: 14000,
+      subtitles: [
+        { at: 1200, text: "6:00 PM. Kai is gone. The house is quiet.", duration: 3500 },
+        { at: 5200, text: "An old box of letters. You haven't opened it in years.", duration: 4500 },
+        { at: 10200, text: "Future-you reads one. From someone you lost.", duration: 3500, narrator: "ACTION" }
+      ],
+      thoughts: [
+        { at: 7500, text: "Still here.", at_pos: "evening", duration: 2500 }
+      ],
+      activities: [
+        { at: 4500, icon: "✉", at_pos: "evening-top", duration: 3500, flavor: "warm" }
+      ]
+    },
+    {
+      key: "debrief",
+      time: "8:00 PM",
+      timeOfDay: "debrief",
+      character: "char-evening",
+      duration: 6500,
+      subtitles: [
+        { at: 800, text: "8:00 PM. Long, good day.", duration: 2200 },
+        { at: 3300, text: "Future-you turns to look at you.", duration: 3000, narrator: "MOMENT" }
+      ],
+      thoughts: [],
+      activities: [],
+      choices: [
+        { text: "The morning message — being someone Kai reaches out to.", insight: "connection80", reaction: "" },
+        { text: "The garden — still moving, still tending things.", insight: "vitality80", reaction: "" },
+        { text: "Teaching Kai — passing something real on.", insight: "legacy80", reaction: "" },
+        { text: "The letter — sitting with the truth of it.", insight: "honesty80", reaction: "" }
+      ],
+      debriefQuestion: "Which moment felt most alive?",
+      isDebrief: true
+    }
+  ];
+
+  const insights80 = {
+    "connection80": {
+      bubble: "That's not an old-person thing. That's a connection thing. You've always been someone people reach out to. You built that slowly, over decades. It started with small choices — now, when you're young.",
+      postcard: [
+        "I remembered you wondering if any of it would matter.",
+        "It did. But not for the reasons you expected.",
+        "The morning messages. The people who still call. That's what I'm most glad I built.",
+        "The smallest version of connection is one real conversation this week — where you actually listen."
+      ],
+      futureQuote: '"The smallest version of connection is one real conversation — where you actually listen."',
+      ifthenWhat: "put my phone down and have one real conversation this week",
+      ifthenWhen: "This week, with someone who matters"
+    },
+    "vitality80": {
+      bubble: "That's not an old-person thing. That's a vitality thing. You respect your body, and you move it even when it resists. That discipline doesn't appear at 80. It starts now, small and stubborn.",
+      postcard: [
+        "I remembered you wondering if you should push through or rest.",
+        "The answer changed over the years. But the habit of moving — that one I kept.",
+        "At 80, my knees argue every morning. I kneel in the garden anyway.",
+        "The smallest version is moving today, even when it's inconvenient."
+      ],
+      futureQuote: '"The smallest version of vitality is moving today, even when it\'s inconvenient."',
+      ifthenWhat: "move my body for 20 minutes today — walk, stretch, anything",
+      ifthenWhen: "Today, before the day gets away from me"
+    },
+    "legacy80": {
+      bubble: "That's not an old-person thing. That's a legacy thing. You care what you pass on. That instinct is already in you. The thing you're learning now — someone will want you to teach it someday.",
+      postcard: [
+        "I remembered you not being sure if what you were learning was worth it.",
+        "It was. Not because of the career. Because of afternoons like today.",
+        "Kai sat with me for an hour trying to learn the thing I've spent my life on. That's not nothing.",
+        "The smallest version of legacy is getting genuinely good at one thing this year."
+      ],
+      futureQuote: '"The smallest version of legacy is getting genuinely good at one thing this year."',
+      ifthenWhat: "spend one hour this week going deeper into something I actually want to be good at",
+      ifthenWhen: "This week"
+    },
+    "honesty80": {
+      bubble: "That's not an old-person thing. That's an honesty thing. You're willing to sit with hard truths, even old ones. That capacity starts young. You already have a version of it.",
+      postcard: [
+        "I remembered you trying to avoid the things that were hard to look at.",
+        "I'm glad I stopped doing that. Not all at once — slowly, over years.",
+        "Reading that letter tonight cost something. But it was better than not reading it.",
+        "The smallest version is one honest moment this week, where you'd usually look away."
+      ],
+      futureQuote: '"The smallest version of honesty is one moment this week where you\'d usually look away."',
+      ifthenWhat: "have one honest conversation I've been avoiding",
+      ifthenWhen: "This week, before I talk myself out of it"
+    }
+  };
+
+  function getActiveSceneData() {
+    return chosenAge === 80 ? sceneData80 : sceneData;
+  }
+
+  function getActiveInsights() {
+    return chosenAge === 80 ? insights80 : insights;
+  }
+
+  // =====================================
+  // NAVIGATION
+  // =====================================
+  function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.add("hidden"));
+    document.getElementById("screen-" + id).classList.remove("hidden");
+  }
+
+  function goModes() {
+    cleanupObserver();
+    currentSceneIndex = 0;
+    chosenAnswers = [];
+    chosenPath = null;
+    chatTurn = 0;
+    document.getElementById("version-input").value = "";
+    document.getElementById("setup-cta").disabled = true;
+    showScreen("modes");
+  }
+  function goSetup(mode) {
+    if (mode) currentMode = mode;
+    if (currentMode === "branching") {
+      goSetupBranching();
+      return;
+    }
+    showScreen("setup");
+    setTimeout(() => document.getElementById("version-input").focus(), 100);
+  }
+  function goSetupBranching() {
+    showScreen("setup-branching");
+  }
+  function goAppearance() {
+    chosenVersion = document.getElementById("version-input").value.trim();
+    if (!chosenVersion) return;
+    document.getElementById("appearance-version").textContent = chosenVersion;
+    showScreen("appearance");
+    setTimeout(() => goChat(), 2200);
+  }
+  function goChat() {
+    chatTurn = 0;
+    document.getElementById("chat-age").textContent = chosenAge;
+    document.getElementById("chat-version").textContent = chosenVersion;
+    document.getElementById("chat-messages").innerHTML = "";
+    document.getElementById("reply-suggestions").innerHTML = "";
+    showScreen("chat");
+    setTimeout(runChatScript, 700);
+  }
+  function goPaths() {
+    const fork = forkData[chosenFork];
+    if (!fork) return;
+    document.getElementById("paths-fork-title").textContent = fork.title;
+    document.getElementById("paths-title").innerHTML = "If you choose " + fork.framing;
+
+    document.getElementById("path-a-label").textContent = fork.pathA.label;
+    document.getElementById("path-a-title").textContent = fork.pathA.title;
+    document.getElementById("path-a-vignette").textContent = fork.pathA.vignette;
+    document.getElementById("path-a-feel").textContent = fork.pathA.feel;
+    document.getElementById("path-a-gain").textContent = fork.pathA.gain;
+    document.getElementById("path-a-give").textContent = fork.pathA.give;
+
+    document.getElementById("path-b-label").textContent = fork.pathB.label;
+    document.getElementById("path-b-title").textContent = fork.pathB.title;
+    document.getElementById("path-b-vignette").textContent = fork.pathB.vignette;
+    document.getElementById("path-b-feel").textContent = fork.pathB.feel;
+    document.getElementById("path-b-gain").textContent = fork.pathB.gain;
+    document.getElementById("path-b-give").textContent = fork.pathB.give;
+
+    chosenPath = null;
+    document.querySelectorAll(".path-card").forEach(c => c.classList.remove("selected"));
+    document.getElementById("paths-cta").disabled = true;
+    document.getElementById("paths-cta").textContent = "Pick one to continue";
+    showScreen("paths");
+  }
+  function pickFork(f) {
+    chosenFork = f;
+    document.querySelectorAll(".fork-option").forEach(el => {
+      el.classList.toggle("selected", el.dataset.fork === f);
+    });
+  }
+  function pickPath(p) {
+    chosenPath = p;
+    document.querySelectorAll(".path-card").forEach(c => {
+      c.classList.toggle("selected", c.dataset.path === p);
+    });
+    const cta = document.getElementById("paths-cta");
+    cta.disabled = false;
+    cta.textContent = "This one feels more like me";
+  }
+  function confirmPath() {
+    if (!chosenPath) return;
+    applyForkInsightToPostcard(chosenFork, chosenPath);
+    cleanupObserver();
+    goPostcard();
+  }
+
+  function onSetupBegin() {
+    chosenVersion = document.getElementById("version-input").value.trim();
+    if (!chosenVersion) return;
+    if (currentMode === "talkTo") {
+      goAppearance();
+    } else {
+      // Default: tryDay
+      goLoading();
+    }
+  }
+
+  // =====================================
+  // MODE 1: SCRIPTED CHAT
+  // =====================================
+  const chatScript = [
+    {
+      future: "Hey. So you're thinking about producing music?",
+      suggestions: ["Yeah, kind of.", "Just curious.", "Not really sure."]
+    },
+    {
+      future: "Tell me what pulls you. The making, or the part where someone hears it?",
+      suggestions: ["The making.", "When someone hears it.", "Both, I think."]
+    },
+    {
+      future: "Let me tell you about my Tuesday. Vocalist 40 minutes late. Mix wasn't sitting. Most of my day was solving things, not making things. What part sounded most like you?",
+      suggestions: ["Solving the vocalist thing.", "The mix problem.", "I'd hate the whole day."]
+    },
+    {
+      future: "I figured. You said you liked it when you ran the gear before the showcase. That's not a music thing. That's a running-things thing.",
+      suggestions: ["So I'm not actually a producer?", "What does that mean?", "Yeah, I see it."]
+    },
+    {
+      future: "It means the music isn't the point yet. The running is. The smallest version of running things, you can try this week. Want me to leave you a postcard about that?",
+      suggestions: ["Yes.", "Yes, please.", "OK."],
+      final: true
+    }
+  ];
+
+  function runChatScript() {
+    const step = chatScript[chatTurn];
+    if (!step) return;
+    addTyping();
+    setTimeout(() => {
+      removeTyping();
+      addChatMessage("future", step.future);
+      renderReplyChips(step.suggestions, step.final);
+    }, 1100 + Math.random() * 600);
+  }
+
+  function renderReplyChips(suggestions, final) {
+    const wrap = document.getElementById("reply-suggestions");
+    wrap.innerHTML = suggestions.map(s =>
+      `<button class="reply-chip" onclick="pickReply('${s.replace(/'/g, "\\'")}', ${final ? 'true' : 'false'})">${escapeHtml(s)}</button>`
+    ).join("");
+  }
+
+  function pickReply(text, final) {
+    addChatMessage("you", text);
+    document.getElementById("reply-suggestions").innerHTML = "";
+    chatTurn++;
+    if (final) {
+      setTimeout(() => {
+        addTyping();
+        setTimeout(() => {
+          removeTyping();
+          addChatMessage("future", "Coming up.");
+          setTimeout(() => {
+            applyChatInsightToPostcard();
+            goPostcard();
+          }, 1400);
+        }, 1200);
+      }, 600);
+    } else {
+      setTimeout(runChatScript, 600);
+    }
+  }
+
+  function sendUserMessage() {
+    const input = document.getElementById("chat-input");
+    const t = input.value.trim();
+    if (!t) return;
+    input.value = "";
+    const step = chatScript[chatTurn];
+    pickReply(t, step && step.final);
+  }
+
+  function addChatMessage(role, text) {
+    const m = document.createElement("div");
+    m.className = "msg " + role;
+    m.textContent = text;
+    const container = document.getElementById("chat-messages");
+    container.appendChild(m);
+    container.scrollTop = container.scrollHeight;
+  }
+  function addTyping() {
+    const m = document.createElement("div");
+    m.className = "typing";
+    m.id = "typing-indicator";
+    m.innerHTML = "<span></span><span></span><span></span>";
+    const container = document.getElementById("chat-messages");
+    container.appendChild(m);
+    container.scrollTop = container.scrollHeight;
+  }
+  function removeTyping() {
+    const t = document.getElementById("typing-indicator");
+    if (t) t.remove();
+  }
+
+  function applyChatInsightToPostcard() {
+    // Mode 1 leads to the running-things insight (canonical)
+    applyInsightToPostcard("running-things");
+  }
+
+  // =====================================
+  // MODE 3: BRANCHING PATH DATA
+  // =====================================
+  const forkData = {
+    subject: {
+      title: "Subject combo",
+      framing: "<strong>Triple Science</strong> or <strong>Humanities</strong>...",
+      pathA: {
+        label: "PATH A · TRIPLE SCIENCE",
+        title: "The structured path",
+        vignette: "Sec 4. Three lab days a week. Equations on whiteboards. You can solve a problem you couldn't last term. The kid two seats over thinks the same way as you.",
+        feel: "Predictable. Recognised. Adults nod approvingly when you mention it.",
+        gain: "A door to medicine, engineering, the careers your family already knows.",
+        give: "The English Lit teacher who saw something in your essays. The hours of writing for fun."
+      },
+      pathB: {
+        label: "PATH B · HUMANITIES",
+        title: "The open path",
+        vignette: "Sec 4. You've written about the Cold War, about your grandmother, about silence. Your essays come back covered in red. Sometimes that hurts. Sometimes it lights you up.",
+        feel: "Less mapped. More open. Your friends ask 'so what do you do with that?'",
+        gain: "Your own voice. Comfort with ambiguity. A relationship with thinking that's yours.",
+        give: "The clarity of a science track. The certainty of a job title at the end."
+      }
+    },
+    jc: {
+      title: "JC vs Polytechnic",
+      framing: "<strong>JC</strong> or <strong>Polytechnic</strong>...",
+      pathA: {
+        label: "PATH A · JC",
+        title: "The long route",
+        vignette: "Two years of A levels. Lecture halls, late-night problem sets, the pressure of one set of papers at the end. University after.",
+        feel: "Academic. Structured. Surrounded by classmates who studied similarly to you.",
+        gain: "A wider range of university options. A familiar pace.",
+        give: "Hands-on practice. The chance to figure out what work feels like before committing to a degree."
+      },
+      pathB: {
+        label: "PATH B · POLY",
+        title: "The applied route",
+        vignette: "Three years of projects, internships, prototypes. You build things, ship things, fail at things. You graduate with a portfolio, not just a transcript.",
+        feel: "Practical. Project-shaped. People around you make things in different ways than you.",
+        gain: "A specific skill set. Industry exposure. A clearer sense of what you're built for.",
+        give: "The breadth of a JC syllabus. Some social paths your JC friends will take."
+      }
+    },
+    leadership: {
+      title: "CCA leadership",
+      framing: "<strong>Run for the role</strong> or <strong>stay in the background</strong>...",
+      pathA: {
+        label: "PATH A · STEP UP",
+        title: "Take the role",
+        vignette: "Sec 4. You're running rehearsals, mediating between the teacher and the team, fielding messages at 11pm. Some days it lights you up. Some days you wish you hadn't said yes.",
+        feel: "Visible. Responsible. Sometimes lonely at the top of the chain.",
+        gain: "A view of how groups actually work. Confidence that you can carry weight. People who'll vouch for you.",
+        give: "Time to just be a member. Some friendships that change because the dynamic changed."
+      },
+      pathB: {
+        label: "PATH B · STAY BACK",
+        title: "Stay a member",
+        vignette: "Sec 4. You show up, you contribute, you go home. You watch others run things. Sometimes you wonder. Mostly you're just there for the practice itself.",
+        feel: "Quieter. More room for the actual craft. Less context-switching.",
+        gain: "Time and headspace for the thing you actually came for. Friendships that stay friendships.",
+        give: "The chance to find out if you'd have been good at it. A specific story for future interviews."
+      }
+    }
+  };
+
+  function applyForkInsightToPostcard(forkKey, pathKey) {
+    const fork = forkData[forkKey];
+    const path = pathKey === "a" ? fork.pathA : fork.pathB;
+    document.getElementById("postcard-body").innerHTML = `
+      <p>I remember the day you stood at the fork. ${escapeHtml(fork.title)}.</p>
+      <p>You picked: <em>${escapeHtml(path.title.toLowerCase())}</em>. You said it felt more like you.</p>
+      <p>I won't tell you if you were right. I'll tell you what I noticed: you didn't pick what was easier. You picked what was truer to the shape of who you were already becoming.</p>
+      <p>The smallest version of trusting that, this week, is to stop second-guessing one decision you've already made.</p>
+      <p class="postcard-sig">— me, three years from now</p>
+    `;
+    document.getElementById("ifthen-future-quote").textContent =
+      `"The smallest version of trusting yourself, this week, is to stop second-guessing one decision you've already made."`;
+    document.getElementById("ifthen-what").value = "stop second-guessing my " + (forkKey === "subject" ? "subject combo" : forkKey === "jc" ? "JC choice" : "CCA leadership decision") + " for one full day";
+    document.getElementById("ifthen-when").value = "Tomorrow";
+  }
+  function goLoading() {
+    chosenVersion = document.getElementById("version-input").value.trim();
+    if (!chosenVersion) return;
+    showScreen("loading");
+    document.getElementById("loading-title").textContent = chosenAge === 80
+      ? "A Tuesday at eighty."
+      : "A morning in your studio.";
+    setTimeout(() => {
+      document.getElementById("loading-bar-fill").style.width = "100%";
+    }, 100);
+    setTimeout(() => {
+      goSim();
+    }, 2400);
+  }
+  function goSim() {
+    showScreen("sim");
+    currentSceneIndex = 0;
+    setupScene(0, /*initial=*/true);
+  }
+  function goPostcard() { cleanupObserver(); showScreen("postcard"); }
+  function cleanupObserver() {
+    clearObserverTimeouts();
+    clearThoughtsAndActivities();
+    hideSubtitleNow();
+    hideObserverControls();
+    document.getElementById("npc-vocalist").classList.remove("visible");
+  }
+  function goIfthen() { showScreen("ifthen"); }
+  function goDone() {
+    const what = document.getElementById("ifthen-what").value.trim();
+    document.getElementById("done-what").textContent = "I will " + what + ".";
+    showScreen("done");
+  }
+
+  // =====================================
+  // SETUP INTERACTIONS
+  // =====================================
+  function pickAge(a) {
+    chosenAge = a;
+    document.querySelectorAll(".age-chip").forEach(c => c.classList.toggle("selected", parseInt(c.dataset.age) === a));
+    const input = document.getElementById("version-input");
+    const chips = document.querySelector(".suggestion-chips");
+    if (a === 80) {
+      input.placeholder = "A retired teacher...";
+      chips.innerHTML = [
+        ["retired teacher", "retired teacher"],
+        ["retired engineer", "retired engineer"],
+        ["retired doctor", "retired doctor"],
+        ["writer", "writer"]
+      ].map(([label, val]) => `<button class="suggestion-chip" onclick="useSuggestion('${val}')">${label}</button>`).join("");
+    } else {
+      input.placeholder = "A music producer...";
+      chips.innerHTML = [
+        ["music producer", "music producer"],
+        ["teacher", "teacher"],
+        ["researcher", "researcher"],
+        ["designer", "designer"]
+      ].map(([label, val]) => `<button class="suggestion-chip" onclick="useSuggestion('${val}')">${label}</button>`).join("");
+    }
+  }
+  function useSuggestion(s) {
+    document.getElementById("version-input").value = s;
+    document.getElementById("setup-cta").disabled = false;
+  }
+  document.getElementById("version-input").addEventListener("input", e => {
+    document.getElementById("setup-cta").disabled = e.target.value.trim().length < 2;
+  });
+  function pickDate(d) {
+    document.querySelectorAll(".date-chip").forEach(c => c.classList.toggle("selected", c.dataset.date === d));
+  }
+
+  // =====================================
+  // SIMULATION ENGINE — pure observer mode
+  // =====================================
+  function setupScene(index, initial = false) {
+    const scene = getActiveSceneData()[index];
+    const container = document.getElementById("scene-container");
+
+    // Update HUD
+    document.getElementById("hud-time").textContent = scene.time;
+
+    // Update day timeline pips
+    const pips = document.querySelectorAll("#day-timeline .day-pip");
+    pips.forEach((pip, i) => {
+      pip.classList.remove("current", "done");
+      if (i < index) pip.classList.add("done");
+      if (i === index) pip.classList.add("current");
+    });
+
+    // Set time-of-day class
+    container.classList.remove("morning", "midday", "afternoon", "evening", "debrief");
+    container.classList.add(scene.timeOfDay);
+    container.classList.toggle("in-debrief", scene.isDebrief === true);
+
+    // Update sky gradient
+    document.getElementById("sky-fill").setAttribute("fill", `url(#sky-${scene.timeOfDay})`);
+
+    // Set character pose
+    document.querySelectorAll(".char-pose").forEach(c => c.classList.remove("visible"));
+    document.getElementById(scene.character).classList.add("visible");
+
+    // Hide vocalist (in case it was shown previously)
+    document.getElementById("npc-vocalist").classList.remove("visible");
+
+    // Hide narration / reaction / choices
+    document.getElementById("reaction-bubble").classList.remove("visible");
+    const narration = document.getElementById("narration");
+    narration.classList.remove("visible");
+    document.getElementById("choices").innerHTML = "";
+
+    // Hide subtitle
+    hideSubtitleNow();
+
+    // Clear any previous observation artifacts
+    clearObserverTimeouts();
+    clearThoughtsAndActivities();
+
+    // Start observation phase
+    setTimeout(() => {
+      startObservation(scene);
+    }, initial ? 700 : 200);
+  }
+
+  // ----- OBSERVATION ENGINE -----
+
+  function startObservation(scene) {
+    observerSkipped = false;
+    observerPaused = false;
+    document.getElementById("btn-pause").innerHTML = pauseIconSvg();
+    showObserverControls();
+
+    // Schedule subtitles (the narrative spine)
+    if (scene.subtitles) {
+      scene.subtitles.forEach((sub) => {
+        scheduleObs(() => showSubtitle(sub.text, sub.duration, sub.narrator), sub.at);
+      });
+    }
+
+    // Schedule thought bubbles
+    if (scene.thoughts) {
+      scene.thoughts.forEach((t) => {
+        scheduleObs(() => {
+          showThoughtBubble(t.text, t.at_pos || scene.character, t.duration);
+        }, t.at);
+      });
+    }
+
+    // Schedule activity icons
+    if (scene.activities) {
+      scene.activities.forEach((a) => {
+        scheduleObs(() => {
+          showActivityIcon(a.icon, a.at_pos || (scene.character + "-top"), a.duration, a.flavor);
+        }, a.at);
+      });
+    }
+
+    // Schedule special events (vocalist cameo)
+    if (scene.events) {
+      scene.events.forEach((e) => {
+        scheduleObs(() => runSceneEvent(e.action), e.at);
+      });
+    }
+
+    // After scene duration, transition
+    scheduleObs(() => {
+      endObservation(scene);
+    }, scene.duration || 14000);
+  }
+
+  function endObservation(scene) {
+    if (scene.isDebrief) {
+      // For debrief: show choices (the only interactive moment)
+      hideSubtitleNow();
+      hideObserverControls();
+      setTimeout(() => {
+        const narration = document.getElementById("narration");
+        document.getElementById("narration-label").textContent = "ONE QUESTION";
+        document.getElementById("narration-text").textContent = scene.debriefQuestion || "Which moment lit you up?";
+        narration.classList.add("visible");
+        setTimeout(() => renderChoices(scene), 500);
+      }, 200);
+    } else {
+      // Non-debrief: auto-advance to next scene
+      hideSubtitle();
+      clearThoughtsAndActivities();
+      setTimeout(() => {
+        runTimeSkip();
+      }, 800);
+    }
+  }
+
+  // ----- SUBTITLES -----
+
+  function showSubtitle(text, duration = 4000, narratorTag = null) {
+    activeSubtitleId++;
+    const myId = activeSubtitleId;
+    const card = document.getElementById("subtitle-card");
+
+    // If a previous subtitle is up, fade it out first
+    if (card.classList.contains("visible")) {
+      card.classList.remove("visible");
+      setTimeout(() => {
+        if (myId !== activeSubtitleId) return;
+        renderSub(text, narratorTag);
+      }, 300);
+    } else {
+      renderSub(text, narratorTag);
+    }
+
+    function renderSub(t, tag) {
+      const tagHtml = tag ? `<span class="narrator-tag ${tag === 'ACTION' ? 'action' : ''}">${tag}</span>` : '';
+      card.innerHTML = tagHtml + escapeHtml(t);
+      requestAnimationFrame(() => card.classList.add("visible"));
+    }
+
+    // Auto-hide after duration
+    scheduleObs(() => {
+      if (myId !== activeSubtitleId) return;
+      card.classList.remove("visible");
+    }, duration);
+  }
+
+  function hideSubtitle() {
+    activeSubtitleId++;
+    const card = document.getElementById("subtitle-card");
+    card.classList.remove("visible");
+  }
+  function hideSubtitleNow() {
+    activeSubtitleId++;
+    const card = document.getElementById("subtitle-card");
+    card.classList.remove("visible");
+    card.innerHTML = "";
+  }
+
+  function toggleCC() {
+    ccEnabled = !ccEnabled;
+    document.getElementById("subtitle").classList.toggle("cc-off", !ccEnabled);
+    document.getElementById("btn-cc").classList.toggle("active", !ccEnabled);
+  }
+
+  function scheduleObs(fn, delay) {
+    const id = setTimeout(() => {
+      if (observerPaused) return;
+      fn();
+    }, Math.max(40, delay / observerSpeed));
+    observerTimeouts.push(id);
+    return id;
+  }
+
+  function clearObserverTimeouts() {
+    observerTimeouts.forEach((id) => clearTimeout(id));
+    observerTimeouts = [];
+  }
+
+  function clearThoughtsAndActivities() {
+    document.querySelectorAll(".thought-bubble, .activity-icon").forEach((el) => el.remove());
+  }
+
+  function showThoughtBubble(text, posKey, duration = 4000) {
+    const pos = positions[posKey] || positions.desk;
+    const bubble = document.createElement("div");
+    bubble.className = "thought-bubble";
+    bubble.style.left = pos.left;
+    bubble.style.top = pos.top;
+    bubble.textContent = text;
+    document.getElementById("thoughts-layer").appendChild(bubble);
+    requestAnimationFrame(() => bubble.classList.add("visible"));
+    scheduleObs(() => {
+      bubble.classList.add("fading");
+      setTimeout(() => bubble.remove(), 600);
+    }, duration);
+  }
+
+  function showActivityIcon(icon, posKey, duration = 3000, flavor = "") {
+    const pos = positions[posKey] || positions["desk-top"];
+    const el = document.createElement("div");
+    el.className = "activity-icon" + (flavor ? " " + flavor : "");
+    el.style.left = pos.left;
+    el.style.top = pos.top;
+    el.textContent = icon;
+    document.getElementById("activities-layer").appendChild(el);
+    requestAnimationFrame(() => el.classList.add("visible"));
+    scheduleObs(() => {
+      el.classList.add("fading");
+      setTimeout(() => el.remove(), 700);
+    }, duration);
+  }
+
+  function runSceneEvent(action) {
+    if (action === "vocalistCameo") {
+      const v = document.getElementById("npc-vocalist");
+      v.classList.add("visible");
+      // Walk in, brief stay, walk back
+      scheduleObs(() => v.classList.remove("visible"), 4500);
+    }
+  }
+
+  // ----- CONTROLS -----
+
+  function togglePause() {
+    observerPaused = !observerPaused;
+    const btn = document.getElementById("btn-pause");
+    if (observerPaused) {
+      btn.innerHTML = playIconSvg();
+      btn.classList.add("active");
+    } else {
+      btn.innerHTML = pauseIconSvg();
+      btn.classList.remove("active");
+    }
+  }
+
+  function cycleSpeed() {
+    observerSpeed = observerSpeed === 1 ? 2 : 1;
+    document.getElementById("btn-speed").textContent = observerSpeed + "×";
+    document.getElementById("btn-speed").classList.toggle("active", observerSpeed > 1);
+  }
+
+  function skipObservation() {
+    if (observerSkipped) return;
+    observerSkipped = true;
+    clearObserverTimeouts();
+    clearThoughtsAndActivities();
+    hideSubtitleNow();
+    document.getElementById("npc-vocalist").classList.remove("visible");
+    endObservation(getActiveSceneData()[currentSceneIndex]);
+  }
+
+  // Observer status pill removed; subtitles narrate instead.
+  function hideObserverStatus() { /* no-op (element removed) */ }
+  function showObserverControls() {
+    document.getElementById("sim-controls").classList.remove("hidden-controls");
+  }
+  function hideObserverControls() {
+    document.getElementById("sim-controls").classList.add("hidden-controls");
+  }
+
+  function pauseIconSvg() {
+    return '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+  }
+  function playIconSvg() {
+    return '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4z"/></svg>';
+  }
+
+  function renderChoices(scene) {
+    const choicesEl = document.getElementById("choices");
+    choicesEl.innerHTML = "";
+    scene.choices.forEach((c, i) => {
+      const btn = document.createElement("button");
+      btn.className = "choice";
+      btn.innerHTML = `<span class="choice-num">${i + 1}</span> <span>${c.text}</span>`;
+      btn.onclick = () => pickChoice(i);
+      choicesEl.appendChild(btn);
+      // Stagger reveal
+      setTimeout(() => btn.classList.add("visible"), 80 * i);
+    });
+  }
+
+  function pickChoice(choiceIndex) {
+    const scene = getActiveSceneData()[currentSceneIndex];
+    const choice = scene.choices[choiceIndex];
+    chosenAnswers.push({ scene: scene.key, choice: choiceIndex });
+
+    // Hide narration + choices
+    document.getElementById("narration").classList.remove("visible");
+    document.querySelectorAll(".choice").forEach(c => c.classList.remove("visible"));
+
+    setTimeout(() => {
+      document.getElementById("choices").innerHTML = "";
+    }, 400);
+
+    if (scene.isDebrief) {
+      // Debrief: show insight bubble, then go to postcard
+      const insightKey = choice.insight;
+      const insight = getActiveInsights()[insightKey];
+      showReaction(insight.bubble, "FUTURE YOU");
+      // After delay, advance to postcard
+      setTimeout(() => {
+        applyInsightToPostcard(insightKey);
+        goPostcard();
+      }, 5500);
+    } else {
+      // Show reaction bubble, then time skip to next scene
+      setTimeout(() => {
+        showReaction(choice.reaction, "FUTURE YOU SAYS");
+      }, 500);
+
+      setTimeout(() => {
+        document.getElementById("reaction-bubble").classList.remove("visible");
+      }, 4500);
+
+      setTimeout(() => {
+        runTimeSkip();
+      }, 4900);
+    }
+  }
+
+  function showReaction(text, label) {
+    const bubble = document.getElementById("reaction-bubble");
+    document.getElementById("reaction-label").textContent = label;
+    document.getElementById("reaction-text").textContent = text;
+
+    // Position the bubble based on character position
+    const scene = getActiveSceneData()[currentSceneIndex];
+    const charId = scene.character;
+    const positions = {
+      "char-desk": { left: "16%", top: "44%" },
+      "char-standing": { left: "32%", top: "42%" },
+      "char-console": { left: "40%", top: "44%" },
+      "char-evening": { left: "16%", top: "44%" }
+    };
+    const pos = positions[charId] || { left: "30%", top: "44%" };
+    bubble.style.left = pos.left;
+    bubble.style.top = pos.top;
+    bubble.style.right = "auto";
+
+    bubble.classList.add("visible");
+  }
+
+  function runTimeSkip() {
+    const activeData = getActiveSceneData();
+    const nextIndex = currentSceneIndex + 1;
+    if (nextIndex >= activeData.length) return;
+    const nextScene = activeData[nextIndex];
+    const location = chosenAge === 80 ? "Same house." : "Same studio.";
+
+    const skip = document.getElementById("timeskip");
+    document.getElementById("timeskip-label").textContent = nextScene.isDebrief ? "END OF DAY" : "LATER THAT DAY";
+    document.getElementById("timeskip-time").textContent = nextScene.time;
+    document.getElementById("timeskip-where").textContent = nextScene.isDebrief ? location + " Lamp on." : location;
+
+    skip.classList.add("visible");
+
+    setTimeout(() => {
+      currentSceneIndex = nextIndex;
+      setupScene(nextIndex);
+    }, 1400);
+
+    setTimeout(() => {
+      skip.classList.remove("visible");
+    }, 2100);
+  }
+
+  function applyInsightToPostcard(insightKey) {
+    const insight = getActiveInsights()[insightKey];
+    const sig = chosenAge === 80 ? "sixty years from now" : "four years from now";
+    document.getElementById("postcard-body").innerHTML =
+      insight.postcard.map(p => `<p>${escapeHtml(p)}</p>`).join("") +
+      `<p class="postcard-sig">— me, ${sig}</p>`;
+    document.getElementById("ifthen-future-quote").textContent = insight.futureQuote;
+    document.getElementById("ifthen-what").value = insight.ifthenWhat;
+    document.getElementById("ifthen-when").value = insight.ifthenWhen;
+  }
+
+  function confirmExit() {
+    if (confirm("Leave the day? Your progress will be lost.")) {
+      goModes();
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[m]);
+  }
+</script>
+</body>
+</html>

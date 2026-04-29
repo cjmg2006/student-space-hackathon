@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Student Space — Journey Map</title>
+<style>
+  :root {
+    --bg: #FAF8F4;
+    --surface: #FFFFFF;
+    --ink: #1F1D1B;
+    --ink-2: #6B6963;
+    --ink-3: #9B9590;
+    --ink-soft: #B6B0A8;
+    --accent: #5B7B66;
+    --accent-soft: #E5EDE7;
+    --accent-deep: #3D5746;
+    --border: #E8E4DD;
+    --border-soft: #F0EDE6;
+    --warm: #D9826E;
+    --warm-soft: #F8E4DD;
+    --warm-deep: #B05A45;
+    --shadow-sm: 0 1px 2px rgba(31, 29, 27, 0.04);
+    --shadow-md: 0 8px 24px rgba(31, 29, 27, 0.08);
+
+    /* Persona colors */
+    --p-eager: #5B7B66;
+    --p-eager-soft: #E5EDE7;
+    --p-self: #6E8DB0;
+    --p-self-soft: #E0E8F0;
+    --p-diseng: #B05A45;
+    --p-diseng-soft: #F8E4DD;
+    --p-cap: #B58748;
+    --p-cap-soft: #F4E8D2;
+
+    /* Solution colors */
+    --s-mirror: #B05A45;
+    --s-mirror-soft: rgba(176, 90, 69, 0.08);
+    --s-mirror-line: rgba(176, 90, 69, 0.25);
+    --s-say: #5B7B66;
+    --s-say-soft: rgba(91, 123, 102, 0.08);
+    --s-say-line: rgba(91, 123, 102, 0.25);
+    --s-future: #4A5C8C;
+    --s-future-soft: rgba(74, 92, 140, 0.08);
+    --s-future-line: rgba(74, 92, 140, 0.25);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.55;
+  }
+
+  .container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 80px 40px;
+  }
+  @media (max-width: 768px) {
+    .container { padding: 40px 20px; }
+  }
+
+  /* ============= HEADER ============= */
+  .hero {
+    margin-bottom: 64px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+  .hero .sub {
+    font-size: 19px;
+    color: var(--ink-2);
+    line-height: 1.5;
+    max-width: 680px;
+  }
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 36px; }
+  }
+
+  /* ============= SECTION ============= */
+  .section { margin-bottom: 80px; }
+  .section-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .section h2 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+    line-height: 1.2;
+  }
+  .section .lede {
+    font-size: 16px;
+    color: var(--ink-2);
+    max-width: 720px;
+    margin-bottom: 36px;
+    line-height: 1.55;
+  }
+
+  /* ============= PERSONAS BAND ============= */
+  .personas-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) {
+    .personas-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .persona {
+    background: var(--surface);
+    border-radius: 18px;
+    padding: 22px 22px 24px;
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  .persona::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--persona-color, var(--accent));
+  }
+  .persona-eager { --persona-color: var(--p-eager); --persona-soft: var(--p-eager-soft); }
+  .persona-self  { --persona-color: var(--p-self); --persona-soft: var(--p-self-soft); }
+  .persona-diseng { --persona-color: var(--p-diseng); --persona-soft: var(--p-diseng-soft); }
+  .persona-cap   { --persona-color: var(--p-cap); --persona-soft: var(--p-cap-soft); }
+
+  .persona-axes {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-3);
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .persona h3 {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 10px;
+    color: var(--ink);
+  }
+  .persona p {
+    font-size: 13.5px;
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+  .persona-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 99px;
+    background: var(--persona-soft);
+    color: var(--persona-color);
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 12px;
+  }
+
+  /* ============= MATRIX (the centerpiece) ============= */
+  .matrix-wrap {
+    background: var(--surface);
+    border-radius: 22px;
+    padding: 32px;
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-sm);
+    overflow-x: auto;
+  }
+
+  .matrix {
+    display: grid;
+    grid-template-columns: 220px repeat(4, 1fr);
+    gap: 1px;
+    min-width: 760px;
+  }
+
+  .matrix-cell {
+    padding: 16px;
+    background: var(--surface);
+  }
+  .matrix-header {
+    background: transparent;
+    padding: 0 16px 16px;
+  }
+  .matrix-header-tag {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .matrix-header h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .matrix-header .triggers-list {
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+
+  .matrix-row-label {
+    background: transparent;
+    padding: 16px 16px 16px 0;
+    border-right: 2px solid var(--solution-color, var(--accent));
+    position: relative;
+  }
+  .matrix-row-label .sol-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--solution-color, var(--accent));
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .matrix-row-label h4 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .matrix-row-label .sol-pitch {
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.4;
+    font-style: italic;
+  }
+
+  .row-mirror { --solution-color: var(--s-mirror); --solution-soft: var(--s-mirror-soft); }
+  .row-say { --solution-color: var(--s-say); --solution-soft: var(--s-say-soft); }
+  .row-future { --solution-color: var(--s-future); --solution-soft: var(--s-future-soft); }
+
+  .activation {
+    background: var(--solution-soft);
+    border-radius: 14px;
+    padding: 12px 14px;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 6px;
+  }
+  .activation-strength {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--solution-color);
+    text-transform: uppercase;
+  }
+  .activation-text {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.4;
+    flex: 1;
+  }
+  .activation-personas {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .persona-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--dot-color);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--surface);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    cursor: default;
+  }
+  .pdot-eager { --dot-color: var(--p-eager); }
+  .pdot-self { --dot-color: var(--p-self); }
+  .pdot-diseng { --dot-color: var(--p-diseng); }
+  .pdot-cap { --dot-color: var(--p-cap); }
+  .activation.dim { opacity: 0.5; }
+  .activation.dim .activation-text { color: var(--ink-2); }
+
+  .matrix-footer-legend {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--ink-2);
+    flex-wrap: wrap;
+  }
+  .matrix-footer-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ============= PATHWAYS ============= */
+  .pathways-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .pathways-grid { grid-template-columns: 1fr; }
+  }
+
+  .pathway {
+    background: var(--surface);
+    border-radius: 22px;
+    padding: 28px;
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--persona-color);
+  }
+  .pathway h3 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .pathway .pw-axes {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--persona-color);
+    letter-spacing: 0.06em;
+    margin-bottom: 18px;
+  }
+
+  .pw-timeline {
+    position: relative;
+    padding-left: 24px;
+    margin-bottom: 18px;
+  }
+  .pw-timeline::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: var(--border);
+    border-radius: 1px;
+  }
+  .pw-step {
+    position: relative;
+    margin-bottom: 14px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .pw-step::before {
+    content: "";
+    position: absolute;
+    left: -22px;
+    top: 6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--persona-color);
+    border: 2.5px solid var(--surface);
+    box-shadow: 0 0 0 2px var(--border);
+  }
+  .pw-step .stage {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--persona-color);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .pw-step .body {
+    color: var(--ink);
+  }
+  .pw-step .tools {
+    font-size: 12px;
+    color: var(--ink-2);
+    margin-top: 4px;
+  }
+  .pw-step .tools strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .pw-summary {
+    background: rgba(0,0,0,0.025);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+  .pw-summary strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* ============= ENTRY POINTS ============= */
+  .entries {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) {
+    .entries { grid-template-columns: 1fr; }
+  }
+  .entry {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 28px;
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-sm);
+    border-top: 4px solid var(--solution-color);
+  }
+  .entry .door-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--solution-color);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .entry h3 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 14px;
+  }
+  .entry p {
+    font-size: 14px;
+    color: var(--ink-2);
+    line-height: 1.55;
+    margin-bottom: 16px;
+  }
+  .entry h4 {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    margin-top: 16px;
+  }
+  .entry .for-personas {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .entry .for-personas .persona-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--p-pill-soft);
+    color: var(--p-pill);
+    padding: 6px 10px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .entry .for-personas .pdot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--p-pill);
+  }
+  .pp-eager { --p-pill: var(--p-eager); --p-pill-soft: var(--p-eager-soft); }
+  .pp-self { --p-pill: var(--p-self); --p-pill-soft: var(--p-self-soft); }
+  .pp-diseng { --p-pill: var(--p-diseng); --p-pill-soft: var(--p-diseng-soft); }
+  .pp-cap { --p-pill: var(--p-cap); --p-pill-soft: var(--p-cap-soft); }
+
+  /* ============= FLOW DIAGRAM ============= */
+  .flow-diagram {
+    background: var(--surface);
+    border-radius: 22px;
+    padding: 48px 32px;
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  .flow-svg {
+    width: 100%;
+    max-width: 880px;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+  }
+  .flow-caption {
+    text-align: center;
+    color: var(--ink-2);
+    font-size: 14px;
+    margin-top: 24px;
+    line-height: 1.55;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ============= IMPLICATIONS ============= */
+  .implications {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) {
+    .implications { grid-template-columns: 1fr; }
+  }
+  .imp-card {
+    background: var(--accent-soft);
+    border-radius: 16px;
+    padding: 22px 24px;
+    border-left: 3px solid var(--accent);
+  }
+  .imp-card .num {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .imp-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .imp-card p {
+    font-size: 13.5px;
+    color: var(--accent-deep);
+    line-height: 1.5;
+  }
+
+  /* ============= FOOTER ============= */
+  .footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    color: var(--ink-3);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="eyebrow">Student Space · Journey Map</div>
+    <h1>Three solutions, four mindsets, <em>the moments that move them.</em></h1>
+    <p class="sub">A map of how 01 Mirror Talk, 02b Say It Better, and 03 Future Self Simulator serve different student personas across the trigger moments surfaced in research. The three solutions form one ecosystem with three doors. Different mindsets enter through different doors.</p>
+  </header>
+
+  <!-- ============= SECTION 1: PERSONAS ============= -->
+  <section class="section">
+    <div class="section-eyebrow">01 — The four mindsets</div>
+    <h2>Who are we designing for?</h2>
+    <p class="lede">From the research segmentation: two axes, motivation to understand future self and articulacy. Each quadrant is served by a different door into the system.</p>
+
+    <div class="personas-grid">
+      <div class="persona persona-eager">
+        <div class="persona-axes">HIGH MOTIVATION · LOW ARTICULACY</div>
+        <h3>Eager but stuck</h3>
+        <p>Wants to figure out future self but lacks language and experience connections. Highest return on synthesis tools.</p>
+        <span class="persona-tag">Primary segment</span>
+      </div>
+      <div class="persona persona-self">
+        <div class="persona-axes">HIGH MOTIVATION · HIGH ARTICULACY</div>
+        <h3>Self-directed</h3>
+        <p>Already doing this work independently. May not need much intervention. Could be peer ambassadors who pull others in.</p>
+        <span class="persona-tag">Multiplier</span>
+      </div>
+      <div class="persona persona-diseng">
+        <div class="persona-axes">LOW MOTIVATION · LOW ARTICULACY</div>
+        <h3>Disengaged</h3>
+        <p>Hardest to reach. Trojan horse designs matter most: low-friction entry, no overt reflection framing, friend-mediated activation.</p>
+        <span class="persona-tag">Stretch segment</span>
+      </div>
+      <div class="persona persona-cap">
+        <div class="persona-axes">LOW MOTIVATION · HIGH ARTICULACY</div>
+        <h3>Capable but apathetic</h3>
+        <p>Can articulate but doesn't see the point. Crisis or milestone is the activation moment. Works transactionally, not continuously.</p>
+        <span class="persona-tag">Fork-driven</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============= SECTION 2: MATRIX ============= -->
+  <section class="section">
+    <div class="section-eyebrow">02 — Trigger × solution</div>
+    <h2>When does each solution earn its place?</h2>
+    <p class="lede">Mapped against the four trigger frequencies surfaced in the research synthesis. Each solution lights up at different moments. The personas indicate who is most likely activated.</p>
+
+    <div class="matrix-wrap">
+      <div class="matrix">
+        <!-- Header row -->
+        <div class="matrix-cell matrix-header"></div>
+        <div class="matrix-cell matrix-header">
+          <div class="matrix-header-tag">DAILY · WEEKLY</div>
+          <h4>Everyday rhythms</h4>
+          <div class="triggers-list">After CCA practice. Friend interactions. Quiet evening moments.</div>
+        </div>
+        <div class="matrix-cell matrix-header">
+          <div class="matrix-header-tag">EPISODIC</div>
+          <h4>Real moments</h4>
+          <div class="triggers-list">Competition. Family question. Class debate. Test results.</div>
+        </div>
+        <div class="matrix-cell matrix-header">
+          <div class="matrix-header-tag">SEASONAL</div>
+          <h4>Inflection points</h4>
+          <div class="triggers-list">CCA leadership election. Subject combo. Term end.</div>
+        </div>
+        <div class="matrix-cell matrix-header">
+          <div class="matrix-header-tag">MAJOR</div>
+          <h4>High-stakes forks</h4>
+          <div class="triggers-list">JC vs poly. DSA / scholarship interview. Personal crisis.</div>
+        </div>
+
+        <!-- Mirror Talk row -->
+        <div class="matrix-cell matrix-row-label row-mirror">
+          <div class="sol-label">01 Mirror Talk</div>
+          <h4>The relational door</h4>
+          <p class="sol-pitch">Friends ask each other one good question. Mirrors come back async.</p>
+        </div>
+        <div class="matrix-cell row-mirror">
+          <div class="activation">
+            <div class="activation-strength">★ Primary fit</div>
+            <div class="activation-text">The canonical use. After every CCA practice, every shared moment. Friends who saw you today reflect what was true.</div>
+            <div class="activation-personas">
+              <span class="persona-dot pdot-eager" title="Eager but stuck">E</span>
+              <span class="persona-dot pdot-self" title="Self-directed">S</span>
+              <span class="persona-dot pdot-diseng" title="Disengaged">D</span>
+            </div>
+          </div>
+        </div>
+        <div class="matrix-cell row-mirror">
+          <div class="activation">
+            <div class="activation-strength">◆ Supporting</div>
+            <div class="activation-text">After a competition or a fight, friends are who actually saw you in the moment. Their mirror lands harder than self-reflection.</div>
+            <div class="activation-personas">
+              <span class="persona-dot pdot-eager">E</span>
+              <span class="persona-dot pdot-self">S</span>
+            </div>
+          </div>
+        </div>
+        <div class="matrix-cell row-mirror">
+          <div class="activation dim">
+            <div class="activation-strength">· Light</div>
+            <div class="activation-text">Less load-bearing here. Inflection points are more about looking inward or forward than mirrors back.</div>
+            <div class="activation-personas">
+              <span class="persona-dot pdot-eager">E</span>
+            </div>
+          </div>
+        </div>
+        <div class="matrix-cell row-mirror">
+          <div class="activation dim">
+            <div class="activation-strength">· Crisis only</div>
+            <div class="activation-text">Friends pull each other through crises. Tool stays out of the way; it's about the friend, not the platform.</div>
+            <div class="activation-personas">
+              <span class="persona-dot pdot-diseng">D</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Say It Better row -->
+        <div class="matrix-cell matrix-row-label row-say">
+          <div class="sol-label">02b Say It Better</div>
+          <h4>The utility door</h4>
+          <p class="sol-pitch">Voice-rant in. Three drafts of your meaning out. Library compounds.</p>
+        </div>
+        <div class="matrix-cell row-say">
+          <div class="activation">
+            <div class="activation-strength">◆ Bursty</div>
+            <div class="activation-text">When something needs articulating: the surprise win, the quiet doubt, the conversation that won't leave you alone.</div>
+            <div class="activation-personas">
+              <span class="persona-dot pdot-eager">E</span>
+            </div>
+          </div>
+        </div>
+        <div class="matrix-cell row-say">
+          <div class="activation">
+            <div class="activation-strength">★ Primary fit</div>
+            <div class="activation-text">Right after a competition, before a family conversation. Articulation pressure is the trigger. Library catches the moment.</div>
+            <div class="activation-personas">
+              <span class="persona-dot pdot-eager">E</span>
+              <span class="persona-dot pdot-cap">C</span>
+              <span class="persona-dot pdot-self">S</span>
+            </div>
+          </div>
+        </div>
+        <div class="matrix-cell row-say">
+          <div class="activation">
+            <div class="activation-strength">◆ Supporting</div>
+            <div class="activation-text">At seasonal inflection points, when you need to write down where you've been before deciding where to go.</div>
+            <div class="activation-personas">
+              <span class="persona-dot pdot-eager">E</span>
+              <span class="persona-dot pdot-cap">C</span>
+            </div>
+          </div>
+        </div>
+        <div class="matrix-cell row-say">
+          <div class="activation">
+            <div class="activation-strength">★ Library = rehearsal</div>
+            <div class="activation-text">DSA interview, scholarship statement, JC application. The library is the language already in your voice. Out of project scope, but inevitable.</div>
+            <div class="activation-personas">
+              <span class="persona-dot pdot-eager">E</span>
+              <span class="persona-dot pdot-cap">C</span>
+              <span class="persona-dot pdot-self">S</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Future Self row -->
+        <div class="matrix-cell matrix-row-label row-future">
+          <div class="sol-label">03 Future Self</div>
+          <h4>The curiosity door</h4>
+          <p class="sol-pitch">Live a Tuesday in a possible future. Make choices. Take a postcard home.</p>
+        </div>
+        <div class="matrix-cell row-future">
+          <div class="activation dim">
+            <div class="activation-strength">· Rare</div>
+            <div class="activation-text">Too heavy for daily. Better as a curiosity-triggered ritual ("what if I tried being X this Saturday afternoon?").</div>
+            <div class="activation-personas">
+              <span class="persona-dot pdot-self">S</span>
+            </div>
+          </div>
+        </div>
+        <div class="matrix-cell row-future">
+          <div class="activation">
+            <div class="activation-strength">◆ Curiosity</div>
+            <div class="activation-text">Right after an ECG talk, after seeing someone's job, after an ambition flickers. The simulation makes the curiosity legible.</div>
+            <div class="activation-personas">
+              <span class="persona-dot pdot-self">S</span>
+              <span class="persona-dot pdot-eager">E</span>
+            </div>
+          </div>
+        </div>
+        <div class="matrix-cell row-future">
+          <div class="activation">
+            <div class="activation-strength">★ Primary fit</div>
+            <div class="activation-text">CCA leadership election, subject combo decision, end-of-term reflection. Branching Path Explorer at exactly the moment the stakes are real.</div>
+            <div class="activation-personas">
+              <span class="persona-dot pdot-eager">E</span>
+              <span class="persona-dot pdot-cap">C</span>
+              <span class="persona-dot pdot-diseng">D</span>
+            </div>
+          </div>
+        </div>
+        <div class="matrix-cell row-future">
+          <div class="activation">
+            <div class="activation-strength">★ Decision time</div>
+            <div class="activation-text">JC vs poly. Trying on the future before committing. The if-then captures the smallest first experiment.</div>
+            <div class="activation-personas">
+              <span class="persona-dot pdot-eager">E</span>
+              <span class="persona-dot pdot-cap">C</span>
+              <span class="persona-dot pdot-self">S</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="matrix-footer-legend">
+        <div class="legend-item"><span class="persona-dot pdot-eager">E</span> Eager but stuck</div>
+        <div class="legend-item"><span class="persona-dot pdot-self">S</span> Self-directed</div>
+        <div class="legend-item"><span class="persona-dot pdot-diseng">D</span> Disengaged</div>
+        <div class="legend-item"><span class="persona-dot pdot-cap">C</span> Capable but apathetic</div>
+        <div class="legend-item" style="margin-left: auto;"><strong style="color: var(--ink);">★</strong> Primary fit · <strong style="color: var(--ink);">◆</strong> Supporting · <strong style="color: var(--ink-3);">·</strong> Light</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============= SECTION 3: ENTRY POINTS ============= -->
+  <section class="section">
+    <div class="section-eyebrow">03 — The three doors</div>
+    <h2>Each solution is the entry point for a different mindset.</h2>
+    <p class="lede">No single tool reaches all four personas. Each is the natural first door for a different mindset. Knowing this lets us position each solution distinctly, even if they live inside one app.</p>
+
+    <div class="entries">
+      <div class="entry" style="--solution-color: var(--s-mirror);">
+        <div class="door-label">01 — RELATIONAL DOOR</div>
+        <h3>Mirror Talk</h3>
+        <p>The Disengaged student won't open a reflection app. But they will respond to a friend asking them a real question through one. A friend invitation is the strongest pull this segment will accept.</p>
+        <h4>Best entry for</h4>
+        <div class="for-personas">
+          <span class="persona-pill pp-diseng"><span class="pdot"></span>Disengaged</span>
+          <span class="persona-pill pp-eager"><span class="pdot"></span>Eager but stuck</span>
+        </div>
+        <h4>Anchored in</h4>
+        <p style="margin-top: 0; font-size: 13px;">H4 (friends shape 40-50% of self-knowledge), H6 (relational), H9 (trust individuals not institutions), H10 (fear of consequences).</p>
+      </div>
+
+      <div class="entry" style="--solution-color: var(--s-say);">
+        <div class="door-label">02b — UTILITY DOOR</div>
+        <h3>Say It Better</h3>
+        <p>The Capable but apathetic student doesn't want a reflection app. But they want to nail the JC interview. The library happens to be the language for that moment. Articulation pressure is the activation.</p>
+        <h4>Best entry for</h4>
+        <div class="for-personas">
+          <span class="persona-pill pp-eager"><span class="pdot"></span>Eager but stuck</span>
+          <span class="persona-pill pp-cap"><span class="pdot"></span>Capable but apathetic</span>
+        </div>
+        <h4>Anchored in</h4>
+        <p style="margin-top: 0; font-size: 13px;">H1 (the gap is linguistic, not experiential), H5 (past launchpad), H10 (fear of consequences as mitigation), H11 (agency over surface).</p>
+      </div>
+
+      <div class="entry" style="--solution-color: var(--s-future);">
+        <div class="door-label">03 — CURIOSITY DOOR</div>
+        <h3>Future Self</h3>
+        <p>The Try a Day mode is the trojan horse for Disengaged students; it feels like a game. For Capable but apathetic, fork moments make this the right tool at the right time. For Self-directed, it's pure curiosity stretching.</p>
+        <h4>Best entry for</h4>
+        <div class="for-personas">
+          <span class="persona-pill pp-self"><span class="pdot"></span>Self-directed</span>
+          <span class="persona-pill pp-diseng"><span class="pdot"></span>Disengaged</span>
+          <span class="persona-pill pp-cap"><span class="pdot"></span>Capable but apathetic</span>
+        </div>
+        <h4>Anchored in</h4>
+        <p style="margin-top: 0; font-size: 13px;">H3 (hard to see what's possible), H12 (action gap). Plus H1 and H5 secondary.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============= SECTION 4: PATHWAYS ============= -->
+  <section class="section">
+    <div class="section-eyebrow">04 — Persona pathways</div>
+    <h2>How each persona traverses the system across years.</h2>
+    <p class="lede">Sketched journeys from Sec 1 to Sec 4, with the solution(s) most likely to land at each stage. Each pathway is the most likely shape, not the only shape.</p>
+
+    <div class="pathways-grid">
+
+      <!-- Eager but stuck -->
+      <div class="pathway" style="--persona-color: var(--p-eager);">
+        <h3>Eager but stuck</h3>
+        <div class="pw-axes">PRIMARY SEGMENT · HIGHEST RETURN</div>
+
+        <div class="pw-timeline">
+          <div class="pw-step">
+            <div class="stage">SEC 1 TERM 2</div>
+            <div class="body">A friend invites them to Mirror Talk. The first mirror lands and reveals something they hadn't seen.</div>
+            <div class="tools"><strong>Mirror Talk</strong> — first contact</div>
+          </div>
+          <div class="pw-step">
+            <div class="stage">SEC 1–2</div>
+            <div class="body">They open Say It Better to articulate what the mirror revealed. First library entry.</div>
+            <div class="tools"><strong>Say It Better</strong> — language scaffold</div>
+          </div>
+          <div class="pw-step">
+            <div class="stage">SEC 2 (END)</div>
+            <div class="body">Subject combo decision. Future Self Try a Day session. Postcard sealed for end of Sec 3.</div>
+            <div class="tools"><strong>Future Self</strong> — fork moment</div>
+          </div>
+          <div class="pw-step">
+            <div class="stage">SEC 3–4</div>
+            <div class="body">Library has 30+ articulations. JC interview prep pulls from their own language. Mirror Talk continues as everyday rhythm.</div>
+            <div class="tools"><strong>All three</strong> — compounding</div>
+          </div>
+        </div>
+
+        <div class="pw-summary">
+          <strong>Compounding effect: highest.</strong> Library has years of articulations by Sec 4. Self-perception is built, not borrowed.
+        </div>
+      </div>
+
+      <!-- Self-directed -->
+      <div class="pathway" style="--persona-color: var(--p-self);">
+        <h3>Self-directed</h3>
+        <div class="pw-axes">PEER AMBASSADOR · MULTIPLIER</div>
+
+        <div class="pw-timeline">
+          <div class="pw-step">
+            <div class="stage">SEC 1</div>
+            <div class="body">Discovers Future Self through curiosity. Uses sporadically; already exploring on their own.</div>
+            <div class="tools"><strong>Future Self</strong> — exploration</div>
+          </div>
+          <div class="pw-step">
+            <div class="stage">SEC 2</div>
+            <div class="body">Starts inviting friends to Mirror Talk. Becomes a node in the friend graph. Pulls Disengaged friends in.</div>
+            <div class="tools"><strong>Mirror Talk</strong> — as ambassador</div>
+          </div>
+          <div class="pw-step">
+            <div class="stage">SEC 3</div>
+            <div class="body">Say It Better as occasional refinement, not discovery. They already articulate well; this sharpens the edges.</div>
+            <div class="tools"><strong>Say It Better</strong> — light use</div>
+          </div>
+          <div class="pw-step">
+            <div class="stage">SEC 4</div>
+            <div class="body">Future Self for stretch goals: scholarship paths, overseas universities. Branching Path Explorer at high stakes.</div>
+            <div class="tools"><strong>Future Self</strong> — stretch</div>
+          </div>
+        </div>
+
+        <div class="pw-summary">
+          <strong>Compounding effect: indirect.</strong> They help others compound more than they need it themselves. They're the gravity that pulls Disengaged friends in.
+        </div>
+      </div>
+
+      <!-- Disengaged -->
+      <div class="pathway" style="--persona-color: var(--p-diseng);">
+        <h3>Disengaged</h3>
+        <div class="pw-axes">HARDEST TO REACH · TROJAN HORSE</div>
+
+        <div class="pw-timeline">
+          <div class="pw-step">
+            <div class="stage">SEC 1</div>
+            <div class="body">Doesn't engage with anything. The system has to wait for them and survive their absence.</div>
+            <div class="tools"><strong>None</strong> — system stays patient</div>
+          </div>
+          <div class="pw-step">
+            <div class="stage">SEC 2 (MID)</div>
+            <div class="body">A Self-directed friend sends them a Mirror question. They reply because their friend asked. They get a mirror back. They save it.</div>
+            <div class="tools"><strong>Mirror Talk</strong> — friend pull</div>
+          </div>
+          <div class="pw-step">
+            <div class="stage">SEC 2 (END)</div>
+            <div class="body">A friend shows them Try a Day as a game. They play. They commit to one tiny experiment. They actually try it.</div>
+            <div class="tools"><strong>Future Self</strong> — game entry</div>
+          </div>
+          <div class="pw-step">
+            <div class="stage">SEC 3–4</div>
+            <div class="body">Occasional engagement, mostly through friends. Say It Better unlikely unless an articulation crisis hits.</div>
+            <div class="tools"><strong>Mirror Talk</strong> — sporadic</div>
+          </div>
+        </div>
+
+        <div class="pw-summary">
+          <strong>Compounding effect: modest.</strong> Only if friends keep pulling them in. The system has to survive them being absent for months and pick up where they left off when they return.
+        </div>
+      </div>
+
+      <!-- Capable but apathetic -->
+      <div class="pathway" style="--persona-color: var(--p-cap);">
+        <h3>Capable but apathetic</h3>
+        <div class="pw-axes">FORK-DRIVEN · TRANSACTIONAL</div>
+
+        <div class="pw-timeline">
+          <div class="pw-step">
+            <div class="stage">SEC 1–2</div>
+            <div class="body">Nothing. They can articulate, but they don't see the point. The system isn't winning them yet.</div>
+            <div class="tools"><strong>None</strong> — wait for stakes</div>
+          </div>
+          <div class="pw-step">
+            <div class="stage">SEC 3 (END)</div>
+            <div class="body">Subject combo decision. Future Self Branching Path Explorer becomes useful because the stakes are real. They use it.</div>
+            <div class="tools"><strong>Future Self</strong> — fork</div>
+          </div>
+          <div class="pw-step">
+            <div class="stage">SEC 4 (DSA)</div>
+            <div class="body">DSA interview prep. Say It Better becomes the rehearsal tool. They articulate before the interview, save the language.</div>
+            <div class="tools"><strong>Say It Better</strong> — application</div>
+          </div>
+          <div class="pw-step">
+            <div class="stage">SEC 4 (LATE)</div>
+            <div class="body">Maybe Future Self once more before JC choice. Then the system can fade into the background.</div>
+            <div class="tools"><strong>Future Self</strong> — final fork</div>
+          </div>
+        </div>
+
+        <div class="pw-summary">
+          <strong>Compounding effect: sparse.</strong> They use the tools transactionally. The system has to deliver value in single sessions, not assume continuity. Each visit must earn its keep.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============= SECTION 5: CROSS-SOLUTION FLOW ============= -->
+  <section class="section">
+    <div class="section-eyebrow">05 — How artifacts compound</div>
+    <h2>The library that grows across solutions.</h2>
+    <p class="lede">Each tool produces an artifact. Each artifact becomes input for another tool. This is the ecosystem advantage and the case for one app.</p>
+
+    <div class="flow-diagram">
+      <svg class="flow-svg" viewBox="0 0 880 460" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#9B9590"/>
+          </marker>
+        </defs>
+
+        <!-- Three solution nodes -->
+        <g>
+          <!-- Mirror -->
+          <circle cx="160" cy="160" r="76" fill="rgba(176, 90, 69, 0.10)" stroke="#B05A45" stroke-width="2"/>
+          <text x="160" y="148" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="14" font-weight="700" fill="#1F1D1B">01 Mirror</text>
+          <text x="160" y="166" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="14" font-weight="700" fill="#1F1D1B">Talk</text>
+          <text x="160" y="186" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="11" fill="#6B6963" font-style="italic">friends reflect</text>
+
+          <!-- Future Self -->
+          <circle cx="720" cy="160" r="76" fill="rgba(74, 92, 140, 0.10)" stroke="#4A5C8C" stroke-width="2"/>
+          <text x="720" y="148" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="14" font-weight="700" fill="#1F1D1B">03 Future</text>
+          <text x="720" y="166" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="14" font-weight="700" fill="#1F1D1B">Self</text>
+          <text x="720" y="186" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="11" fill="#6B6963" font-style="italic">simulation</text>
+
+          <!-- Say It Better - center -->
+          <circle cx="440" cy="320" r="100" fill="rgba(91, 123, 102, 0.12)" stroke="#5B7B66" stroke-width="2.5"/>
+          <text x="440" y="304" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="15" font-weight="700" fill="#1F1D1B">02b Say It Better</text>
+          <text x="440" y="324" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="12" fill="#5B7B66" font-weight="600">THE LIBRARY</text>
+          <text x="440" y="346" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="11" fill="#6B6963" font-style="italic">your articulated</text>
+          <text x="440" y="362" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="11" fill="#6B6963" font-style="italic">language</text>
+        </g>
+
+        <!-- Arrows: Mirror → Library -->
+        <path d="M 220 200 Q 320 260 360 290" stroke="#B05A45" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+        <text x="270" y="240" font-family="-apple-system, sans-serif" font-size="11" fill="#6B6963" font-style="italic">"you stayed back to help"</text>
+        <text x="270" y="254" font-family="-apple-system, sans-serif" font-size="10" fill="#9B9590">save mirror as articulation</text>
+
+        <!-- Arrows: Library → Future Self (seeds) -->
+        <path d="M 520 290 Q 620 240 660 200" stroke="#5B7B66" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+        <text x="555" y="240" font-family="-apple-system, sans-serif" font-size="11" fill="#6B6963" font-style="italic">"I notice when others struggle"</text>
+        <text x="555" y="254" font-family="-apple-system, sans-serif" font-size="10" fill="#9B9590">seed the simulation</text>
+
+        <!-- Arrow: Future Self → Library (postcard) -->
+        <path d="M 670 220 Q 600 320 540 320" stroke="#4A5C8C" stroke-width="2" fill="none" marker-end="url(#arrowhead)" opacity="0.85" stroke-dasharray="5,3"/>
+        <text x="555" y="380" font-family="-apple-system, sans-serif" font-size="11" fill="#6B6963" font-style="italic">postcard becomes</text>
+        <text x="555" y="394" font-family="-apple-system, sans-serif" font-size="10" fill="#9B9590">a saved articulation</text>
+
+        <!-- Arrow: Library → Mirror (ask back) -->
+        <path d="M 360 320 Q 250 320 220 220" stroke="#5B7B66" stroke-width="2" fill="none" marker-end="url(#arrowhead)" opacity="0.85" stroke-dasharray="5,3"/>
+        <text x="220" y="380" font-family="-apple-system, sans-serif" font-size="11" fill="#6B6963" font-style="italic">"what have you seen me run?"</text>
+        <text x="220" y="394" font-family="-apple-system, sans-serif" font-size="10" fill="#9B9590">library suggests questions</text>
+
+        <!-- Top arrow: Mirror ↔ Future Self direct (rare) -->
+        <path d="M 220 140 Q 440 80 660 140" stroke="#9B9590" stroke-width="1" fill="none" stroke-dasharray="3,4" opacity="0.5"/>
+        <text x="440" y="80" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="10" fill="#9B9590" font-style="italic">rare direct link</text>
+
+      </svg>
+      <p class="flow-caption">A friend's mirror becomes a saved articulation. The articulation seeds a future-self simulation. The simulation's postcard returns as another saved articulation. The library, over years, suggests questions to bring back to friends. Different mindsets enter through different doors but all eventually traverse the loop.</p>
+    </div>
+  </section>
+
+  <!-- ============= SECTION 6: IMPLICATIONS ============= -->
+  <section class="section">
+    <div class="section-eyebrow">06 — Design implications</div>
+    <h2>What this means for the v1.</h2>
+    <p class="lede">Six implications drawn from the journey map. Each one is a decision the team can make ahead of prototyping.</p>
+
+    <div class="implications">
+      <div class="imp-card">
+        <div class="num">01</div>
+        <h4>All three are needed for full coverage.</h4>
+        <p>No single tool reaches all four mindsets. Skipping one leaves a persona under-served. Mirror reaches Disengaged via friends. Say It Better reaches Capable via stakes. Future Self reaches all via curiosity or forks.</p>
+      </div>
+      <div class="imp-card">
+        <div class="num">02</div>
+        <h4>Different doors for different students.</h4>
+        <p>Onboarding shouldn't force a single entry. New users discover whichever solution matches their current need. Marketing the three doors separately, even within one app, is the way to reach all four mindsets.</p>
+      </div>
+      <div class="imp-card">
+        <div class="num">03</div>
+        <h4>The ecosystem flow is the long-term value.</h4>
+        <p>Each solution is useful standalone. The artifacts compounding across solutions builds self-perception over years. This is the strongest case for one app over three: only one app makes the compounding visible to the student.</p>
+      </div>
+      <div class="imp-card">
+        <div class="num">04</div>
+        <h4>Risk 3 splits into a three-mode design.</h4>
+        <p>Mirror Talk = high-frequency low-stakes (the muscle). Future Self = milestone-anchored (the moment). Say It Better = on-demand bursty. The two-mode design Risk 3 calls for is actually three modes, one per solution.</p>
+      </div>
+      <div class="imp-card">
+        <div class="num">05</div>
+        <h4>Future Self is the safest first taste for Sec 1.</h4>
+        <p>H9 trust-building is hardest in Sec 1 Term 1. Mirror Talk needs friend graph (a term to form). Say It Better needs accumulated experience. Future Self requires neither. New-Sec-1 onboarding should default to it.</p>
+      </div>
+      <div class="imp-card">
+        <div class="num">06</div>
+        <h4>Magic moments differ per persona.</h4>
+        <p>Eager finds magic in Say It Better's third version. Disengaged in a friend's mirror or a postcard. Self-directed in being asked to mirror others. Capable in a successful application that pulled from their library. Lead with the right magic for each segment.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p>Companion analysis: <a href="../concepts/JOURNEY-MAP.md">JOURNEY-MAP.md</a> · Source research: <a href="../synthesis.md">synthesis.md</a> · Concepts: <a href="../concepts/README.md">concepts/README</a></p>
+    <p style="margin-top: 8px;">Student Space hackathon · 2026-04 · Reza Ilmi (MOE)</p>
+  </footer>
+
+</div>
+
+</body>
+</html>
