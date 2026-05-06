@@ -2,6 +2,60 @@
 
 Synthesis from April 2026 pen-and-paper research, school sessions (NYGH, others), and stakeholder needfinding. Use this as the grounding context for any concept ideation.
 
+## Experience journey
+
+The intended experience arc for a student moving through the platform:
+
+**Experience → Capture → Acknowledge / Validate → Sensemake → Synthesise → Make decision → Take action**
+
+This sequence matters because each stage has different design requirements. Capture is low-friction and non-judgmental. Acknowledge/validate comes before any interpretation. Sensemaking happens collaboratively, not immediately. Synthesis is longitudinal, not point-in-time. Decision and action are downstream outputs, not the starting expectation.
+
+## Design qualities
+
+The overall experience should be:
+
+- **Safe** — students need to feel the container is protected before they will share honestly
+- **Honest** — design should not prompt performative responses or shape answers toward expected outcomes
+- **Self-driven** — the student is the primary owner; institutional and teacher needs are secondary
+- **Accessible** — usable across articulacy levels, not dependent on strong verbal or written expression
+- **Low friction** — entry cost must be near-zero; anything that feels like effort will be skipped
+
+## Key features
+
+- **Data gathering** — the platform accumulates student inputs over time, across modalities and moments, building a longitudinal record that is richer than any single reflection session
+- **Proactive guidance** — the system surfaces connections, prompts, and next steps at the right moments rather than waiting for students to initiate; guidance is triggered by patterns in their own data, not by a fixed curriculum schedule
+- **Evolving inner world** — students can see their self-understanding shift over time; the platform makes visible the arc of who they are becoming, not just where they are today
+
+## Design principles
+
+1. **Validation before guidance.** Acknowledge what the student has shared before interpreting or redirecting. Moving to guidance too early signals that the raw feeling is a problem to solve.
+
+2. **Sensemake by connecting the dots.** Don't ask students to derive their own insights. Surface connections across their own entries — across time, across experiences, across themes — that they couldn't see from inside a single moment.
+
+3. **Focus on the moment first; let identity emerge.** Start with the concrete situation, not the abstract question. "What happened?" before "who are you?" Identity is the output of accumulated moments, not a prompt.
+
+4. **Communication beyond writing.** Text is one modality. Emoji, voice, image, scene selection, gesture — any of these can carry valid signal. Articulacy in writing should not gate participation.
+
+5. **From meaning to concrete action.** When synthesis produces insight, the next step should be specific and small. Not "what do you want to be?" but "what is the next thing you could try?" The gap between self-knowledge and action is a real design problem, not an assumed bridge.
+
+6. **Aha moments about yourself can be social.** Peer reflection is a natural context for self-discovery — friends often know you in ways you don't know yourself. Designing for shared moments of recognition, not just private journaling, can make insight feel real rather than abstract.
+
+7. **React only after sensemaking.** Don't respond to raw input immediately. When things are unprocessed, early interpretation or flagging can feel like surveillance or judgment. Hold the signal until there is enough context to respond meaningfully.
+
+8. **Physically visualise the evolution of self.** Students should be able to see their own arc over time — not a score or a report, but a visual record of how their self-understanding has shifted. Seeing change is motivating and validating in a way that reading back entries is not.
+
+9. **Allow students ownership to customise the space.** The container should feel like theirs: medium, aesthetic, structure. Institutional templates reduce authenticity.
+
+10. **Open to teachers by default.** Teachers have a role in activation and sense-checking, but the design needs to be precise about what they see. The default should support a holistic picture over time, not raw transcripts of vulnerable moments. Resolve the consequence fear tension before implementing this.
+
+11. **Record first, figure out later.** Capture should be divorced from interpretation. Students should be able to deposit a moment without being asked to categorise, explain, or rate it on entry. Meaning gets assigned in retrospect.
+
+12. **Remove pressure on decision making.** Reflection should not feel like it is building toward a verdict. Students who sense that their inputs are being assessed against a destination (e.g. ECG pathway) will perform rather than share.
+
+13. **Quantity over quality for reflections.** More entries with lower individual signal is better than fewer entries with high-effort polish. Volume creates the longitudinal texture that makes synthesis possible. Optimise for ease of capture, not depth of a single capture.
+
+---
+
 ## Hypotheses
 
 ### Cluster A — How students relate to self-knowledge
